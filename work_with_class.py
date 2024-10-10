@@ -18,12 +18,12 @@ nlp = spacy.load("en_core_web_sm")
 import warnings
 warnings.filterwarnings("ignore")
 class Config:
-    OPENAI_API_KEY = ""
+    OPENAI_API_KEY = "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"
     DATABASE_HOST = "database-test-postgress-instance.cpk2uyae6iza.ap-south-1.rds.amazonaws.com"
     DATABASE_USERNAME = "postgres"
     DATABASE_PASSWORD = "valign#123"
     PORT = 5432
-    PINECONE_API_KEY = ""  
+    PINECONE_API_KEY = "9fbe58e4-9e72-4023-90eb-ba8d022916b5"  
     INDEX_NAME = "smart-desk"
     MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
     openAI_model="gpt-4o-mini-2024-07-18"
