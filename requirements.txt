@@ -39,3 +39,8 @@ transformers==4.44.2
 typing_extensions==4.12.2
 urllib3==2.2.3
 uvicorn==0.30.6
+pandas
+spacy
+langchain-openai
+sentence-transformers
+psycopg2
