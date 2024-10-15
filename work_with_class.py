@@ -18,12 +18,12 @@ nlp = spacy.load("en_core_web_sm")
 import warnings
 warnings.filterwarnings("ignore")
 class Config:
-    OPENAI_API_KEY = "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"
+    OPENAI_API_KEY = "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"
     DATABASE_HOST = "database-test-postgress-instance.cpk2uyae6iza.ap-south-1.rds.amazonaws.com"
     DATABASE_USERNAME = "postgres"
     DATABASE_PASSWORD = "valign#123"
     PORT = 5432
-    PINECONE_API_KEY = "9fbe58e4-9e72-4023-90eb-ba8d022916b5"  
+    PINECONE_API_KEY = "9fbe58e4-9e72-4023-90eb-ba8d022916b5"
     INDEX_NAME = "smart-desk"
     MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
     openAI_model="gpt-4o-mini-2024-07-18"
@@ -65,7 +65,7 @@ class Initialize_config:
             ## Answer:
             """
         self.prompt_template=ChatPromptTemplate.from_template(template)
-        
+
 class DB_Manager:
     def __init__(self):
         self.connection = None
@@ -97,7 +97,7 @@ class DB_Manager:
         except Exception as e:
             print(f"Error executing SQL query: {e}")
             self.results=[]
-        
+
 class Schema_manager:
     def __init__(self,conn,query,schema):
         self.conn=conn
@@ -130,14 +130,14 @@ class Determine_querry_type:
         user_query_lower = self.user_query.lower()
         table_names = self.schema_df['table_name'].str.lower().unique()
         column_names = self.schema_df['column_name'].str.lower().unique()
-        
+
         # Function to check fuzzy match
         def is_fuzzy_match(query, options):
             for option in options:
                 if fuzz.partial_ratio(query, option) >= self.threshold:
                     return True
             return False
-        
+
         # Check if user query matches any table or column name
         if is_fuzzy_match(user_query_lower, table_names) or \
            is_fuzzy_match(user_query_lower, column_names):
@@ -148,13 +148,13 @@ class Determine_querry_type:
         user_text_lower = user_text.lower()
         for entity in schema_entities:
             if entity.lower() in user_text_lower:
-                return True  
+                return True
         return False
     def contains_date_related_text(self,user_input):
         # Current year and month for comparison
         current_year = datetime.now().year
         current_month = datetime.now().strftime("%B")
-        
+
         # Patterns to match date, month, year, and relative terms
         date_pattern = r'\b(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4}|\d{4}[-/\.]\d{1,2}[-/\.]\d{1,2})\b'
         month_pattern = r'\b(January|February|March|April|May|June|July|August|September|October|November|December|' \
@@ -163,9 +163,9 @@ class Determine_querry_type:
         time_pattern = r'\b\d+\s*(or\s*(more|fewer|less))?\s*(days?|weeks?|months?|years?)\b'
         relative_terms_pattern = r'\b(this month|this year|last month|last year|next month|next year)\b'
         # Find matches
-        if (re.search(date_pattern, user_input) or 
-            re.search(month_pattern, user_input, re.IGNORECASE) or 
-            re.search(year_pattern, user_input) or 
+        if (re.search(date_pattern, user_input) or
+            re.search(month_pattern, user_input, re.IGNORECASE) or
+            re.search(year_pattern, user_input) or
             re.search(time_pattern, user_input) or
             re.search(relative_terms_pattern, user_input, re.IGNORECASE)):
             return True
@@ -217,7 +217,7 @@ class Pinecone_manager:
         try:
             # Remove the "## Solution:" part and any other non-JSON text
             json_match = re.search(r'\{.*\}', self.extracted_Features, re.DOTALL)
-            
+
             if json_match:
                 # Extract the JSON part from the matched result
                 cleaned_features = json_match.group(0)
@@ -260,13 +260,13 @@ class Pinecone_manager:
         for x in data.keys():
             pattern = re.escape(x)
             user_input=re.sub(pattern, data[x], user_input, flags=re.IGNORECASE)
-        self.augmented_input=user_input    
+        self.augmented_input=user_input
         self.aug_selection.clear()
         #self.clear_all()
 
     def query_pinecone_and_augment_input(self, user_input, namespace, columns):
         self.augmented_input = user_input
-        
+
         def flatten_dict(d, parent_key=''):
             items = []
             for k, v in d.items():
@@ -315,14 +315,14 @@ class Pinecone_manager:
                         print(f"No matches found for {entity_value} in Pinecone.")
                 except Exception as e:
                     print(f"Error querying Pinecone: {str(e)}")
-                    
+
         if len(self.selection) >= 1:
             res = {"selection": self.selection}
             print(res)
             return res
         else:
             return self.augmented_input
-                              
+
 class OpenAI_manager:
     def __init__(self):
         self.sql_query=''
@@ -354,8 +354,8 @@ class OpenAI_manager:
             print("Resp:",parsed_response)
             return parsed_response
         except Exception as e:
-            return f"Error generating response from OpenAI: {str(e)}"  
-        
+            return f"Error generating response from OpenAI: {str(e)}"
+
     def extract_features_with_openai(self,user_input, processed_schema_df):
         schema_json = processed_schema_df.to_json(orient='records')
 
@@ -391,13 +391,13 @@ class OpenAI_manager:
             response = openai.chat.completions.create(
                 model="gpt-4o-mini-2024-07-18",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant specializing in extracting entities that map user input to the relevant tables and columns in the database."}, 
+                    {"role": "system", "content": "You are a helpful assistant specializing in extracting entities that map user input to the relevant tables and columns in the database."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=500,
                 temperature=0.5
             )
-            
+
             # Extract the response text
             extracted_features = response.choices[0].message.content.strip()
             return extracted_features
@@ -449,7 +449,7 @@ class OpenAI_manager:
     def generate_response(self,aug_input,results):
         # Prepare the prompt for GPT-4 to generate the natural language response
         prompt = f"User query: \"{aug_input}\"\nSQL result: {results}\nGenerate a natural language response from the result:"
-        
+
         # Call the OpenAI Chat API
         response = openai.chat.completions.create(
           model="gpt-4o-mini-2024-07-18",
@@ -459,8 +459,8 @@ class OpenAI_manager:
           max_tokens=500,
           temperature=0.7
         )
-        
-        self.response=response.choices[0].message.content     
+
+        self.response=response.choices[0].message.content
 user_input=''
 
 def main(db_name='',schema='',key='',data=''):
@@ -497,7 +497,7 @@ def main(db_name='',schema='',key='',data=''):
                         return x
                     print("querry:",pine_cone.augmented_input)
                     openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
-                      
+
                     DB.execute_sql_query(openai_manager.sql_query)
                     print(DB.results)
                     if len(DB.results)!=0:
@@ -507,8 +507,8 @@ def main(db_name='',schema='',key='',data=''):
                     else:
                         pine_cone.clear_all()
                         return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
-                    
-                    
+
+
                 else:
                     print("querry:",user_input)
                     openai_manager.generate_sql_query(schema_manager.schema_str,user_input)
@@ -519,7 +519,7 @@ def main(db_name='',schema='',key='',data=''):
                 pine_cone=Pinecone_manager(schema_manager.schema_df)
                 pine_cone.process_user_input(user_input)
                 _, feature_list=pine_cone.process_extracted_features()
-                
+
                 if key=="Query":
                     user_input=data
                     x=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
@@ -529,7 +529,7 @@ def main(db_name='',schema='',key='',data=''):
                 if isinstance(x, dict):
                     return x
                 print("querry:",pine_cone.augmented_input)
-                
+
                 openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
                 DB.execute_sql_query(openai_manager.sql_query)
                 if len(DB.results)!=0:
@@ -539,10 +539,10 @@ def main(db_name='',schema='',key='',data=''):
                 else:
                     pine_cone.clear_all()
                     return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
-                
+
         else:
             return (openai_manager.get_answer_from_chatbot(user_input, schema_manager.schema_str,p.openai_model))
-        
+
     else:
         return ("No schema Selected")
     DB.close_connection()
@@ -554,10 +554,12 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc"
+db_name="python_test_poc_two"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/process', methods=['POST'])
 def process_request():
@@ -568,7 +570,7 @@ def process_request():
         data=data[key]
         if key=='Query':
             user_input=data
-        result=main(db_name="python_test_poc",schema='public',key=key,data=data)
+        result=main(db_name="python_test_poc_two",schema='public',key=key,data=data)
         if isinstance(result, dict):
             return jsonify(result)
         return jsonify({"result": result})
@@ -576,7 +578,4 @@ def process_request():
         return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5001)
-
-        
-    
+    app.run(host= '0.0.0.0',debug=True,port=5001)
