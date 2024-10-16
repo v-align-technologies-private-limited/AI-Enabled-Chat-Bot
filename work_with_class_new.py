@@ -538,7 +538,7 @@ def process_request():
         result=main(db_name="python_test_poc_two",schema='public',key=key,data=data)
         return jsonify({"result": result})
     except Exception as e:
-        return jsonify({"result": "There is an issue with query genration, query can not be executed with selected please provide proper query"})
+        return jsonify({"result": "There is an issue with query genration, query can not be executed with entered question please provide proper question"})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
