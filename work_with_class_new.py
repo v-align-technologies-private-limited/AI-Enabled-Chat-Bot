@@ -59,8 +59,6 @@ class Initialize_config:
         self.pinecone_index=pc.Index(Config.INDEX_NAME)
     def process_openAI_model(self):
         openai.api_key=Config.OPENAI_API_KEY
-        print(Config.OPENAI_API_KEY)
-        print(type(Config.OPENAI_API_KEY))
         self.openai_model = ChatOpenAI(
         openai_api_key=openai.api_key,
         model_name=Config.openAI_model,
@@ -450,7 +448,6 @@ user_input=''
 
 def main(db_name='',schema='',key='',data=''):
     global user_input,DB,p,conn,openai_manager
-    user_input=data
     # Initialize handlers
     selection=None
     query = f"""
@@ -521,11 +518,27 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc"
+db_name="python_test_poc_two"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 app = Flask(__name__)
-
+CORS(app)
+@app.route('/process', methods=['POST'])
+def process_request():
+    global user_input,conn
+    try:
+        print(conn)
+        data = request.json
+        print(data)
+        key=next(iter(data.keys()))
+        data=data[key]
+        user_input=data
+        print(user_input)
+        result=main(db_name="python_test_poc_two",schema='public',key=key,data=data)
+        return jsonify({"result": result})
+    except Exception as e:
+        return jsonify({"result": "There is an issue with query genration, query can not be executed with selected please provide proper query"})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
@@ -534,21 +547,9 @@ def assign_db():
     db_name=data[key]
     return jsonify({"result":"DB selected successfully"})
     
-@app.route('/process', methods=['POST'])
-def process_request():
-    global user_input
-    try:
-        data = request.json
-        key=next(iter(data.keys()))
-        data=data[key]
-        user_input=data
-        result=main(db_name="python_test_poc",schema='public',key=key,data=data)
-        return jsonify({"result": result})
-    except Exception as e:
-        return jsonify({"result": "There is an issue with query genration, query can not be executed with selected please provide proper query"})
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5001)
+    app.run(host= '0.0.0.0',debug=True,port=5001)
 
         
     

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask App with Selection</title>
+    <title>Flask App</title>
 </head>
 <body>
     <h1>Enter Text</h1>
@@ -11,14 +11,6 @@
         <input type="text" id="user-input" name="user_input" required>
         <button type="submit">Submit</button>
     </form>
-
-    <div id="selections-div" style="display:none;">
-        <h2>Select Values</h2>
-        <form id="selection-form" method="POST">
-            <div id="selection-options"></div>
-            <button type="submit">Submit Selections</button>
-        </form>
-    </div>
 
     <div id="result-div">
         <h2>Response</h2>
@@ -28,83 +20,31 @@
     <script>
         // Handle text input submission
         document.getElementById("text-form").addEventListener("submit", async function(event) {
-            event.preventDefault();
-            const userInput = document.getElementById("user-input").value;
-            
-            // Send input with the key 'Query' to another Flask
-            const response = await fetch('/send-to-another-flask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ Query: userInput })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Response from another Flask (with selections):', data);
-                
-                // If the response contains selection data, display it in the selection form
-                if (data.selection) {
-                    document.getElementById("selections-div").style.display = "block";
-                    
-                    const selectionOptionsDiv = document.getElementById("selection-options");
-                    selectionOptionsDiv.innerHTML = '';  // Clear previous options
-                    
-                    // For each key in the selection, create a dropdown
-                    for (const [key, values] of Object.entries(data.selection)) {
-                        const selectElement = document.createElement("select");
-                        selectElement.name = key;
-                        
-                        values.forEach(value => {
-                            const option = document.createElement("option");
-                            option.value = value;
-                            option.textContent = value;
-                            selectElement.appendChild(option);
-                        });
-                        
-                        const label = document.createElement("label");
-                        label.textContent = `Choose for ${key}: `;
-                        label.appendChild(selectElement);
-                        
-                        selectionOptionsDiv.appendChild(label);
-                        selectionOptionsDiv.appendChild(document.createElement("br"));
-                    }
-                } else {
-                    console.log("No selection key found in the response.");
-                }
-            } else {
-                console.error("Error in fetching data from another Flask app");
-            }
+    event.preventDefault();
+    const userInput = document.getElementById("user-input").value;
+    
+    try {
+        const response = await fetch('http://127.0.0.1:5000/send-to-another-flask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ Query: userInput })
         });
 
-        // Handle selection form submission
-        document.getElementById("selection-form").addEventListener("submit", async function(event) {
-            event.preventDefault();
-            const formData = new FormData(document.getElementById("selection-form"));
-            const selections = Object.fromEntries(formData.entries());
-            
-            console.log('Selections being sent:', selections);  // Log the selections for debugging
-            
-            // Send the selections back to the second Flask app
-            const response = await fetch('/submit-selections-to-another-flask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ selection: selections })
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                console.log('Final result from another Flask:', result);
-                
-                // Display the final result in the HTML page
-                document.getElementById("result").textContent = JSON.stringify(result);
-            } else {
-                console.error("Error in submitting selections to another Flask app");
-            }
-        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Response from Flask:', data);
+        document.getElementById("result").textContent = JSON.stringify(data);
+
+    } catch (error) {
+        console.error('Failed to fetch:', error);
+        document.getElementById("result").textContent = "Failed to fetch data.";
+    }
+});
     </script>
 </body>
 </html>
