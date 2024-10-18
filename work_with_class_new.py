@@ -518,7 +518,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc_two"
+db_name="python_test_poc"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -526,7 +526,7 @@ app = Flask(__name__)
 CORS(app)
 @app.route('/process', methods=['POST'])
 def process_request():
-    global user_input,conn
+    global user_input,conn, db_name
     try:
         print(conn)
         data = request.json
@@ -535,7 +535,7 @@ def process_request():
         data=data[key]
         user_input=data
         print(user_input)
-        result=main(db_name="python_test_poc_two",schema='public',key=key,data=data)
+        result=main(db_name=db_name,schema='public',key=key,data=data)
         return jsonify({"result": result})
     except Exception as e:
         return jsonify({"result": "There is an issue with query genration, query can not be executed with selected please provide proper query"})
