@@ -37,7 +37,7 @@ class Config:
     INDEX_NAME = config['pinecone']['index_name']
 
     # Model settings
-    MODEL_NAME = config['model']['name']
+    MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
 class Initialize_config:
     def __init__(self):
