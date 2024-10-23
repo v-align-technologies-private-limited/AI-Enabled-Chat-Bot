@@ -37,7 +37,7 @@ class Config:
     INDEX_NAME = config['pinecone']['index_name']
 
     # Model settings
-    MODEL_NAME = config['model']['name']
+    MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
 class Initialize_config:
     def __init__(self):
@@ -348,64 +348,33 @@ class OpenAI_manager:
         # Check if the user input contains aggregation keywords
         contains_aggregation = any(keyword in user_input.lower() for keyword in aggregation_keywords)
 
-        # Determine if the input is a general list query
-        general_query_keywords = ["list all", "show", "retrieve", "get all", "all projects"]
-        is_general_query = any(keyword in user_input.lower() for keyword in general_query_keywords)
-
-        # If it's a general query, return an empty response or a structured response indicating it's a general query
-        if is_general_query:
-            return '{"projects": {}}'  # or return some structured message indicating this is a general list request
-
-        # Enhanced prompt to better understand user intent and accurately extract relevant entities
+        # Refined prompt to ensure OpenAI extracts only relevant string entities
         prompt = f"""
         ## Database Schema Context:
-        The database contains the following schema (tables and columns with their data types):
+        The following represents the columns, their respective tables, and data types available in the database:
         {schema_json}
 
         ## User Input:
-        The user provided the following input: "{user_input}"
+        The user has provided the following input: "{user_input}"
 
         ## Task:
-        Your task is to deeply understand the user's intent and extract relevant features, values, and table names from the user input based on the schema. Specifically:
-        
-        1. **User Intent**:
-        - First, analyze the input to infer whether the user is asking for **specific details**, performing **search queries** (e.g., filtering on values), or seeking **aggregated results** (e.g., counts, sums).
-        - Accurately distinguish between **list or overview queries** and **specific queries**.
+        Extract relevant features, values, and table names from the user input based on the schema. Focus on extracting values from columns that have varchar, char, or text data types.
 
-        2. **Entity and Feature Extraction**:
-        - Extract features, values, and entities based on the schema, focusing on:
-            - Column values from varchar, char, or text fields.
-            - If aggregation terms like "{', '.join(aggregation_keywords)}" are detected, ensure the correct numeric columns are considered alongside the varchar columns.
-            - If specific project names or user names are detected, extract those entities precisely.
-
-        3. **Handling Partial and Flexible Matches**:
-        - Handle partial matches, spelling variations, and incomplete inputs intelligently.
-
-        4. **Schema-based Filtering**:
-        - For varchar, text, and char columns, extract relevant string values.
-
-        5. **Output**:
-        - Return a structured JSON dictionary, where:
-            - Each table name corresponds to the fields and their extracted values.
-            - Omit any fields or tables where no relevant values were found.
-        
-        Example JSON output format:
-        {{
-            "projects": {{
-            "project_name": "IIFL Tower"
-            }},
-            "users": {{
-            "owner": "John Doe"
-            }}
-        }}
+        ## Instructions:
+        - Identify and return only those features which correspond to varchar, char, or text columns in the schema.
+        - Ignore any references to columns with data types like datetime, date, int, or float unless they are part of the aggregation or filter criteria.
+        - If the input includes aggregation keywords but also mentions specific column values, extract those entities.
+        - Return a JSON dictionary that includes the table names as keys, and within each table, include the fields and their corresponding extracted values.
+        - Omit any fields or tables where the value is empty or null.
+        - Format the output as a JSON object with keys only for tables and fields that have values.
         """
 
         try:
-            # Call OpenAI to extract features/entities using the refined prompt
+            # Use the correct OpenAI chat completion method with the refined prompt
             response = openai.chat.completions.create(
                 model="gpt-4o-mini-2024-07-18",
                 messages=[
-                    {"role": "system", "content": "You are an expert in extracting entities from user input by mapping them to relevant database schema."}, 
+                    {"role": "system", "content": "You are a helpful assistant specializing in extracting entities that map user input to the relevant tables and columns in the database."}, 
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=500,
@@ -418,53 +387,33 @@ class OpenAI_manager:
         except openai.OpenAIError as e:
             print(f"Error with OpenAI: {e}")
             raise
-    def generate_sql_query(self, processed_schema_str, aug_input):
+    def generate_sql_query(self,processed_schema_str, aug_input):
         prompt = f"""
-        You are an expert in SQL query generation, specialized in mapping user input to relevant database tables and columns.
+        You are an expert in SQL query generation.
 
-        The database has the following schema structure:
+        The database contains the following schema:
         {processed_schema_str}
 
-        The user provided this input:
+        The user has provided the following input:
         "{aug_input}"
 
-        Your task is to generate an **optimized and accurate SQL query** that adheres to the following principles:
-        1. **User Intent**:
-        - Understand the user's intent thoroughly. For example, identify whether they are asking for a **list** or **specific details**.
-        - Handle both explicit and implicit queries (e.g., incomplete phrases, partial project names, or ambiguous terms).
-        
-        2. **Schema and Data Relationships**:
-        - Map the user’s input to the correct **tables** and **columns** based on the schema.
-        - Ensure that foreign key relationships are correctly used if multiple tables are involved (e.g., joins).
+        Based on this schema, generate an **optimized** SQL query that:
+        - **Accurately reflects the user's intent**.
+        - Ensures the correct **table and column names** are used based on the schema.
+        - Use **appropriate SQL operators** such as `LIKE` for partial string matches.
+        - Handle **data type mismatches** by casting where necessary (e.g., comparing strings to dates or integers).
+        - **Optimize the query** for performance, e.g., by adding `LIMIT` if only a subset of results is required, and using `ORDER BY` where sorting is implied.
+        - Ensure **case sensitivity** in string matching, preserving the original casing of values provided by the user.
+        - Apply flexible matching techniques for variations in user input (e.g., small spelling mistakes or different cases), but do not convert values to lowercase.
 
-        3. **SQL Operators**:
-        - For partial matches, use `LIKE` with wildcards (`%`) appropriately, ensuring flexible handling of partial inputs or spelling variations.
-        - Use **appropriate operators** based on the input (e.g., `=`, `>`, `IN`, etc.).
-
-        4. **Performance Optimization**:
-        - If the user does not specify the number of results, apply a default `LIMIT 10` for performance.
-        - Use **indexed columns** where possible to speed up queries.
-        - Apply `ORDER BY` if the user implies sorting (e.g., "latest projects", "top-rated projects").
-
-        5. **Data Type Handling**:
-        - Handle **data type mismatches** by casting where necessary (e.g., comparing strings to dates or numbers).
-        - Be cautious of null values or missing data that could impact query results.
-
-        6. **Case Sensitivity**:
-        - Maintain **case sensitivity** in string comparisons but handle user input variations without converting to lowercase.
-        - Ensure that exact matches honor the original casing in the database, but flexible enough for input variations.
-
-        7. **Handling Errors and Ambiguity**:
-        - If the user input is ambiguous or contains partial project names, ensure the query handles these cases and selects the most relevant match from the data (e.g., fuzzy matching).
-
-        Output the generated SQL query in a **well-formatted** and **executable** way.
-
+        Output the SQL query in a well-formatted way that is ready for execution.
         """
+
         # Call GPT-4o-mini-2024-07-18 model using chat completion API
         response = openai.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant specializing in generating optimized SQL queries based on user input and database schema."},
+                {"role": "system", "content": "You are a helpful assistant specializing in generating SQL queries that map user input to the relevant tables and columns in the database."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=500,  # Token limit for generated completion
@@ -473,14 +422,13 @@ class OpenAI_manager:
 
         # Extract SQL query from the response
         sql_response = response.choices[0].message.content
-        self.sql_response = sql_response
+        self.sql_response=sql_response
 
-    # Find and clean the SQL query part
-    start = sql_response.find("```sql") + 6
-    end = sql_response.find("```", start)
-    self.sql_query = sql_response[start:end].strip()
-    print(self.sql_query)
-
+        # Find and clean the SQL query part
+        start = sql_response.find("```sql") + 6
+        end = sql_response.find("```", start)
+        self.sql_query = sql_response[start:end].strip()
+        print(self.sql_query)
     def generate_response(self,aug_input,results):
         # Prepare the prompt for GPT-4 to generate the natural language response
         prompt = f"User query: \"{aug_input}\"\nSQL result: {results}\nGenerate a natural language response from the result:"
@@ -570,7 +518,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc_two"
+db_name="python_test_poc"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -578,7 +526,7 @@ app = Flask(__name__)
 CORS(app)
 @app.route('/process', methods=['POST'])
 def process_request():
-    global user_input,conn
+    global user_input,conn, db_name
     try:
         print(conn)
         data = request.json
@@ -587,10 +535,10 @@ def process_request():
         data=data[key]
         user_input=data
         print(user_input)
-        result=main(db_name="python_test_poc_two",schema='public',key=key,data=data)
+        result=main(db_name=db_name,schema='public',key=key,data=data)
         return jsonify({"result": result})
     except Exception as e:
-        return jsonify({"result": "There is an issue with query genration, query can not be executed with selected please provide proper query"})
+        return jsonify({"result": f"There is an issue with query genration, query can not be executed with selected please provide proper query{e}"})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
