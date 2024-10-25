@@ -89,6 +89,45 @@ class OpenAI_manager:
             raise
     def generate_sql_query(self,processed_schema_str, aug_input):
         prompt = f"""
+        ## Database Schema Context:
+        The following represents the columns, their respective tables, and data types available in the database:
+        {schema_json}
+
+        ## User Input:
+        The user has provided the following input: "{user_input}"
+
+        ## Task:
+        Extract relevant features, values, and table names from the user input based on the schema. Focus on extracting values from columns that have varchar, char, or text data types.
+
+        ## Instructions:
+        - Identify and return only those features which correspond to varchar, char, or text columns in the schema.
+        - Ignore any references to columns with data types like datetime, date, int, or float unless they are part of the aggregation or filter criteria.
+        - If the input includes aggregation keywords but also mentions specific column values, extract those entities.
+        - Return a JSON dictionary that includes the table names as keys, and within each table, include the fields and their corresponding extracted values.
+        - Omit any fields or tables where the value is empty or null.
+        - Format the output as a JSON object with keys only for tables and fields that have values.
+        """
+
+        try:
+            # Use the correct OpenAI chat completion method with the refined prompt
+            response = openai.chat.completions.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant specializing in extracting entities that map user input to the relevant tables and columns in the database."}, 
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.5
+            )
+            
+            # Extract the response text
+            extracted_features = response.choices[0].message.content.strip()
+            return extracted_features
+        except openai.OpenAIError as e:
+            print(f"Error with OpenAI: {e}")
+            raise
+    def generate_sql_query(self,processed_schema_str, aug_input):
+        prompt = f"""
         You are an expert in SQL query generation.
 
         The database contains the following schema:
