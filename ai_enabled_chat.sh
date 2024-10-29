@@ -8,4 +8,4 @@ cd /home/ubuntu/AI-Enabled-Chat-Bot || exit
 source /home/ubuntu/anaconda3/bin/activate ai_enabled_chat
 
 #Run the Python script
-python work_with_class.py
+python app.py
