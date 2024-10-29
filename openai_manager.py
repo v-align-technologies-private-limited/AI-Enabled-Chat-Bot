@@ -50,23 +50,44 @@ class OpenAI_manager:
 
         # Refined prompt to ensure OpenAI extracts only relevant string entities
         prompt = f"""
-        ## Database Schema Context:
-        The following represents the columns, their respective tables, and data types available in the database:
+        ### Database Schema Overview
+        The following schema provides the columns and tables available in the database. Use this schema to interpret user input accurately:
         {schema_json}
+        
+        ### User Query
+        The user has input: "{user_input}"
+        
+        ### Objectives
+        1. **Extract Relevant Text-Based Features**:
+        - Focus solely on identifying features and values that match text-based columns (`varchar`, `char`, or `text`) in the schema.
+        - **Ignore** columns with data types other than `varchar`, `char`, or `text`.
+        - **Exclude** any time references unless they directly relate to specific text-based entities that add context to the user’s query. If the query only references time without relevant entities, return an empty JSON object: `{{}}`.
+        
+        2. **Understand User Intent**:
+        - Focus on relevant entities that align with the user’s query context. For example, if the query is about projects, include only project-related fields (e.g., `project_name`) and ignore unrelated columns.
+        - Ensure the response reflects table and column names that best match the user's intended context.
 
-        ## User Input:
-        The user has provided the following input: "{user_input}"
-
-        ## Task:
-        Extract relevant features, values, and table names from the user input based on the schema. Focus on extracting values from columns that have varchar, char, or text data types.
-
-        ## Instructions:
-        - Identify and return only those features which correspond to varchar, char, or text columns in the schema.
-        - Ignore any references to columns with data types like datetime, date, int, or float unless they are part of the aggregation or filter criteria.
-        - If the input includes aggregation keywords but also mentions specific column values, extract those entities.
-        - Return a JSON dictionary that includes the table names as keys, and within each table, include the fields and their corresponding extracted values.
-        - Omit any fields or tables where the value is empty or null.
-        - Format the output as a JSON object with keys only for tables and fields that have values.
+        3. **Output Requirements**:
+        - Return a JSON object containing only tables and columns with meaningful, non-empty values.
+        - Drop any fields or tables where the value is empty, `null`, or a placeholder.
+        - Format the output JSON to include only keys for tables and fields with actual values. If no relevant entities are found, return an empty JSON object `{{}}`.
+        - Example: if the user requests a project name and the project has no owner, exclude the `owner` field:
+            ```json
+            {{
+                "projects": {{
+                    "project_name": "Project IIFL RPA"
+                }}
+            }}
+            ```
+        
+        4. **Ensure Valid JSON**:
+        - Ensure the output is valid JSON containing only tables and fields with actual values. If no relevant entities are found, return an empty JSON object `{{}}`.
+        
+        5. **No Placeholders or Comments**:
+        - Do not include placeholders, comments, or fields without actual values. Focus only on values directly tied to the schema and user’s query.
+        
+        6. **Contextual Clarity**:
+        - Validate that chosen table and column names fit the user's question context. When in doubt, prioritize accuracy and relevance over trying to cover all possible terms.
         """
 
         try:
@@ -77,16 +98,20 @@ class OpenAI_manager:
                     {"role": "system", "content": "You are a helpful assistant specializing in extracting entities that map user input to the relevant tables and columns in the database."}, 
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
-                temperature=0.5
+                max_tokens=5000,
+                temperature=0.2
             )
             
             # Extract the response text
             extracted_features = response.choices[0].message.content.strip()
+
+            # Remove any markdown formatting, if present
+            extracted_features = extracted_features.replace('```json', '').replace('```', '').strip()
             return extracted_features
         except openai.OpenAIError as e:
             print(f"Error with OpenAI: {e}")
             raise
+    
     def generate_sql_query(self,processed_schema_str, aug_input):
         prompt = f"""
         You are a PostgreSQL expert. Given an input question, create a syntactically correct PostgreSQL query and return ONLY the generated query. Use the following guidelines for SQL generation:
@@ -119,7 +144,7 @@ class OpenAI_manager:
                 {"role": "system", "content": "You are a helpful assistant specializing in generating SQL queries that map user input to the relevant tables and columns in the database."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500,  # Token limit for generated completion
+            max_tokens=5000,  # Token limit for generated completion
             temperature=0.2  # Slight temperature for creative output
         )
 

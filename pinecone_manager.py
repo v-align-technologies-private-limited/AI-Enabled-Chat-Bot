@@ -27,7 +27,7 @@ class Pinecone_manager:
     def process_extracted_features(self):
         def clean_extracted_features(feature_dict):
             # Remove any keys with None or empty values
-            cleaned_feature_dict = {k: v for k, v in feature_dict.items() if v}
+            cleaned_feature_dict = {k: v for k, v in feature_dict.items() if v not in [None, '', [], {}, 'none', 'null', 'n/a', 'not specified']}
             # Extract the non-null values into a list
             feature_list = list(cleaned_feature_dict.values())
             return cleaned_feature_dict, feature_list
