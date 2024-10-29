@@ -138,10 +138,7 @@ class Pinecone_manager:
                             score_diff = best_score - match['score']
                             if score_diff < 0.07:
                                 selection_required = True
-                                break
-                            else:
-                                best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
-                                self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
+                                break                                
 
                         if selection_required:
                             # Record the values for multiple values to select among the matches
@@ -150,6 +147,9 @@ class Pinecone_manager:
                                 get_match.append(match['metadata'].get('unique_value', entity_value))
                             self.selection[entity_value]=get_match
                             self.selection_required=True
+                        else:
+                            best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
+                            self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
 
                         # Automatically select the best match if no significant score difference
                         #self.augmented_input = self.augmented_input.replace(entity_value, selected_match)
