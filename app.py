@@ -32,7 +32,8 @@ schema_manager.fetch_schema_with_data_types()
 schema_manager.format_schema()
                                     
 user_input=''
-def main(db_name='',schema='',data='',determine_querry=''):
+def main(db_name='',schema='',data='',determine_querry='',key=''):
+        global user_input
         determine_querry.determine_query_type(data)
         if determine_querry.query_type=="database":
             is_entity=determine_querry.is_entity_present(schema_manager.schema_df['column_name'].tolist(),
@@ -42,7 +43,16 @@ def main(db_name='',schema='',data='',determine_querry=''):
                     pine_cone=PineCone_Manager(schema_manager.schema_df)
                     pine_cone.process_user_input(user_input)
                     _, feature_list=pine_cone.process_extracted_features()
-                    pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
+                    #if input is user question find the matches for entities in pinecone
+                    if key=="Query":
+                            user_input=data
+                            res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
+                    #if input is user seletions for entity
+                    else :
+                            pine_cone.call_query_pinecone1(user_input,p.pinecone_index,p.embedding_model,data)
+                            res=''
+                    if isinstance(res, dict):
+                            return res
                     openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
                     DB.execute_sql_query(openai_manager.sql_query)
                     print(DB.results)
@@ -64,8 +74,17 @@ def main(db_name='',schema='',data='',determine_querry=''):
                 pine_cone=Pinecone_manager(schema_manager.schema_df)
                 pine_cone.process_user_input(user_input)
                 _, feature_list=pine_cone.process_extracted_features()
-                pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
-                
+                #if input is user question find the matches for entities in pinecone
+                if key=="Query":
+                        print(4)
+                        user_input=data
+                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
+                #if input is user seletions for entity
+                else :
+                        pine_cone.call_query_pinecone1(user_input,p.pinecone_index,p.embedding_model,data)
+                        res=''
+                if isinstance(res, dict):
+                        return res
                 openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
                 DB.execute_sql_query(openai_manager.sql_query)
                 if len(DB.results)!=0:
@@ -78,20 +97,29 @@ def main(db_name='',schema='',data='',determine_querry=''):
                 
         else:
             return (openai_manager.get_answer_from_chatbot(user_input, schema_manager.schema_str,p.openai_model))
-        DB.close_connection()
+        
+app = Flask(__name__)
+CORS(app)
 @app.route('/process', methods=['POST'])
 def process_request():
     global user_input,conn
     determine_querry=Determine_querry_type(schema_manager.schema_df)
+    print(1)
     try:
         data = request.json
         key=next(iter(data.keys()))
         data=data[key]
-        user_input=data
-        result=main(db_name=db_name,schema='public',data=data,determine_querry=determine_querry)
+        print(2)
+        if key=='Query':
+            user_input=data
+            print(3)
+        result=main(db_name=db_name,schema='public',key=key,data=data,determine_querry=determine_querry)
+        print(result)
+        if isinstance(result, dict):
+            return jsonify({"selection":result})
         return jsonify({"result": result})
     except Exception as e:
-        return jsonify({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+        return jsonify({"result": str(e)})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
@@ -102,7 +130,6 @@ def assign_db():
     
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5000)
+    app.run(debug=True,port=5001)
 
-        
     
