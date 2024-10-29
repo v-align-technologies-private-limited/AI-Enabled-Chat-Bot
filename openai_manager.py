@@ -55,22 +55,22 @@ class OpenAI_manager:
         {schema_json}
         
         ### User Query
-        The user input is: "{user_input}"
+        The user has input: "{user_input}"
         
         ### Objectives
         1. **Extract Relevant Text-Based Features**:
-        - Focus exclusively on identifying features and values from text-based columns (`varchar`, `char`, or `text`) in the schema.
+        - Focus solely on identifying features and values that match text-based columns (`varchar`, `char`, or `text`) in the schema.
         - **Ignore** columns with data types other than `varchar`, `char`, or `text`.
-        - **Exclude** time references unless they directly relate to specific text-based entities that add context to the query. If the query only refers to time without mentioning relevant entities, return an empty JSON object: `{{}}`.
+        - **Exclude** any time references unless they directly relate to specific text-based entities that add context to the user’s query. If the query only references time without relevant entities, return an empty JSON object: `{{}}`.
         
         2. **Understand User Intent**:
-        - Extract entities specifically related to the user’s query context. For instance, if the user asks about projects, include only project-related fields (e.g., `project_name`) and ignore fields from unrelated tables.
-        - Ensure that table and column names reflect the user's intent accurately based on the context of the query.
+        - Focus on relevant entities that align with the user’s query context. For example, if the query is about projects, include only project-related fields (e.g., `project_name`) and ignore unrelated columns.
+        - Ensure the response reflects table and column names that best match the user's intended context.
 
         3. **Output Requirements**:
-        - Return a JSON object containing only tables and fields with meaningful, non-empty values.
-        - **Omit any fields** where the value is empty, `null`, or a placeholder.
-        - Structure the output JSON so that it includes only keys for tables and fields with actual values. If no relevant entities are found, return an empty JSON object `{{}}`.
+        - Return a JSON object containing only tables and columns with meaningful, non-empty values.
+        - Drop any fields or tables where the value is empty, `null`, or a placeholder.
+        - Format the output JSON to include only keys for tables and fields with actual values. If no relevant entities are found, return an empty JSON object `{{}}`.
         - Example: if the user requests a project name and the project has no owner, exclude the `owner` field:
             ```json
             {{
@@ -81,14 +81,14 @@ class OpenAI_manager:
             ```
         
         4. **Ensure Valid JSON**:
-        - Confirm that the output is a valid JSON object containing only tables and fields with actual values. If no relevant entities are identified, return an empty JSON object `{{}}`.
+        - Ensure the output is valid JSON containing only tables and fields with actual values. If no relevant entities are found, return an empty JSON object `{{}}`.
         
         5. **No Placeholders or Comments**:
-        - Avoid any placeholders, comments, or fields without actual values. Include only specific values tied directly to the schema and the user's query.
-
+        - Do not include placeholders, comments, or fields without actual values. Focus only on values directly tied to the schema and user’s query.
+        
         6. **Contextual Clarity**:
-        - Validate that selected table and column names best fit the user’s query context. In cases of ambiguity, prioritize relevance and clarity.
-        """ 
+        - Validate that chosen table and column names fit the user's question context. When in doubt, prioritize accuracy and relevance over trying to cover all possible terms.
+        """
 
         try:
             # Use the correct OpenAI chat completion method with the refined prompt
