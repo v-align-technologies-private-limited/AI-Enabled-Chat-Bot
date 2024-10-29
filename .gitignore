@@ -11,4 +11,4 @@ htmlcov/
 docs/_build/
 
 # files
-config.ini
+#config.ini
