@@ -35,24 +35,21 @@ user_input=''
 def main(db_name='',schema='',data='',determine_querry=''):
         determine_querry.determine_query_type(data)
         if determine_querry.query_type=="database":
-            is_entity=determine_querry.is_entity_present(schema_manager.schema_df['column_name'].tolist(),
-                                        user_input)
-            if determine_querry.contains_date_related_text(user_input):
-                if is_entity:
-                    pine_cone=PineCone_Manager(schema_manager.schema_df)
-                    pine_cone.process_user_input(user_input)
-                    _, feature_list=pine_cone.process_extracted_features()
-                    pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
-                    openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
-                    DB.execute_sql_query(openai_manager.sql_query)
-                    print(DB.results)
-                    if len(DB.results)!=0:
-                        openai_manager.generate_response(pine_cone.augmented_input,DB.results)
-                        pine_cone.clear_all()
-                        return (openai_manager.response)
-                    else:
-                        pine_cone.clear_all()
-                        return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
+                pine_cone=PineCone_Manager(schema_manager.schema_df)
+                pine_cone.process_user_input(user_input)
+                _, feature_list=pine_cone.process_extracted_features()
+                if len(feature_list)!=0:
+                        pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
+                        openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
+                        DB.execute_sql_query(openai_manager.sql_query)
+                        print(DB.results)
+                        if len(DB.results)!=0:
+                                openai_manager.generate_response(pine_cone.augmented_input,DB.results)
+                                pine_cone.clear_all()
+                                return (openai_manager.response)
+                        else:
+                                pine_cone.clear_all()
+                                return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
                     
                     
                 else:
@@ -60,21 +57,6 @@ def main(db_name='',schema='',data='',determine_querry=''):
                     DB.execute_sql_query(openai_manager.sql_query)
                     openai_manager.generate_response(user_input,DB.results)
                     return (openai_manager.response)
-            else:
-                pine_cone=Pinecone_manager(schema_manager.schema_df)
-                pine_cone.process_user_input(user_input)
-                _, feature_list=pine_cone.process_extracted_features()
-                pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
-                
-                openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
-                DB.execute_sql_query(openai_manager.sql_query)
-                if len(DB.results)!=0:
-                    openai_manager.generate_response(pine_cone.augmented_input,DB.results)
-                    pine_cone.clear_all()
-                    return (openai_manager.response)
-                else:
-                    pine_cone.clear_all()
-                    return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
                 
         else:
             return (openai_manager.get_answer_from_chatbot(user_input, schema_manager.schema_str,p.openai_model))
