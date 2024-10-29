@@ -89,24 +89,27 @@ class OpenAI_manager:
             raise
     def generate_sql_query(self,processed_schema_str, aug_input):
         prompt = f"""
-        You are an expert in SQL query generation.
+        You are a PostgreSQL expert. Given an input question, create a syntactically correct PostgreSQL query and return ONLY the generated query. Use the following guidelines for SQL generation:
 
-        The database contains the following schema:
+        - The input may contain partial or similar names for entities, such as project names, user names, or status descriptions. Handle these by using `ILIKE` operators with `%` on both sides of the string to allow flexible matching.
+        - Ensure you match project names like 'IIFL Samasta', 'IIfl Samasta', 'IIFL', 'iifl smasta', 'Iiflsmsota' (or any other spelling variations) to the correct project name from the database.
+        - Use the column `instnm` whenever the question is about institute names and ensure it is associated with the column `unitid` in the query.
+        - If context involves more than one table, use JOIN operations, but only join on columns that are correctly related, such as using `unitid` for table joins.
+        - When calculating averages or ratios, ensure proper aggregation with the `AVG()` or relevant functions.
+        - Pay close attention to the filtering criteria provided in the input and apply them in the `WHERE` clause using logical operators like `AND`, `OR` for combining conditions.
+        - Use appropriate date or timestamp functions such as `TO_TIMESTAMP()` for proper date handling, and use `DATE_PART` or `EXTRACT` when necessary for extracting specific parts of a date.
+        - If grouping is required (e.g., for totals or averages by categories), use the `GROUP BY` clause effectively.
+        - For readability, use aliases for tables and columns, especially for complex joins or subqueries.
+        - Where necessary, use subqueries or Common Table Expressions (CTEs) to break down complex queries into simpler parts for clarity.
+        - If a limit on the number of rows is required, do not return more than 100 rows in the query.
+
+        Make sure the SQL query accurately reflects the user's intent based on the input question, even if no Retrieval-Augmented Generation (RAG) is needed for certain cases.
+
+        Database schema:
         {processed_schema_str}
 
-        The user has provided the following input:
+        User input:
         "{aug_input}"
-
-        Based on this schema, generate an **optimized** SQL query that:
-        - **Accurately reflects the user's intent**.
-        - Ensures the correct **table and column names** are used based on the schema.
-        - Use **appropriate SQL operators** such as `LIKE` for partial string matches.
-        - Handle **data type mismatches** by casting where necessary (e.g., comparing strings to dates or integers).
-        - **Optimize the query** for performance, e.g., by adding `LIMIT` if only a subset of results is required, and using `ORDER BY` where sorting is implied.
-        - Ensure **case sensitivity** in string matching, preserving the original casing of values provided by the user.
-        - Apply flexible matching techniques for variations in user input (e.g., small spelling mistakes or different cases), but do not convert values to lowercase.
-
-        Output the SQL query in a well-formatted way that is ready for execution.
         """
 
         # Call GPT-4o-mini-2024-07-18 model using chat completion API
@@ -117,7 +120,7 @@ class OpenAI_manager:
                 {"role": "user", "content": prompt}
             ],
             max_tokens=500,  # Token limit for generated completion
-            temperature=0.7  # Slight temperature for creative output
+            temperature=0.2  # Slight temperature for creative output
         )
 
         # Extract SQL query from the response

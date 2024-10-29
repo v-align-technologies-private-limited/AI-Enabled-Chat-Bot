@@ -17,7 +17,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc_two"
+db_name="python_test_poc"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 app = Flask(__name__)
 CORS(app)
@@ -102,7 +102,7 @@ def assign_db():
     
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5000)
+    app.run(host="0.0.0.0",debug=True,port=5001)
 
         
     
