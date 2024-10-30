@@ -51,7 +51,7 @@ class Determine_querry_type:
                         r'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b'
         year_pattern = r'\b(19|20)\d{2}\b'
         time_pattern = r'\b\d+\s*(or\s*(more|fewer|less))?\s*(days?|weeks?|months?|years?)\b'
-        relative_terms_pattern = r'\b(this month|this year|last month|last year|next month|next year)\b'
+        relative_terms_pattern = r'\b(this month|this year|last month|last year|next month|next year|previous month|previous year|this quarter|previous year|next quarter|last quarter)\b'
         # Find matches
         if (re.search(date_pattern, user_input) or 
             re.search(month_pattern, user_input, re.IGNORECASE) or 
