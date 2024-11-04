@@ -35,7 +35,7 @@ user_input=''
 def main(db_name='',schema='',data='',determine_querry=''):
         determine_querry.determine_query_type(data)
         if determine_querry.query_type=="database":
-                pine_cone=PineCone_Manager(schema_manager.schema_df)
+                pine_cone=PineCone_manager(schema_manager.schema_df)
                 pine_cone.process_user_input(user_input)
                 _, feature_list=pine_cone.process_extracted_features()
                 if len(feature_list)!=0:
