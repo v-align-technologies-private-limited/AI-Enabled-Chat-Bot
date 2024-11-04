@@ -161,6 +161,7 @@ class OpenAI_manager:
 
         # Extract SQL query from the response
         sql_response = response.choices[0].message.content
+        print(f"sql_response: {sql_response}")
         self.sql_response=sql_response
 
         # Find and clean the SQL query part
