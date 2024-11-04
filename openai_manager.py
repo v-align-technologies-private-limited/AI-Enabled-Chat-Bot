@@ -99,7 +99,7 @@ class OpenAI_manager:
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=5000,
-                temperature=0.2
+                temperature=0.3
             )
             
             # Extract the response text
