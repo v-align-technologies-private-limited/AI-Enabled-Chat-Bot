@@ -6,6 +6,8 @@ from langchain_experimental.agents.agent_toolkits import create_csv_agent
 # Load the CSV data
 data = pd.read_csv("./heart.csv", nrows=50)  # Load a maximum of 50 rows for performance
 print("Data Loaded Successfully")
+print(data.info())
+print("Number of patients with heart disease:", data[data['target'] == 1].shape[0])
 
 # Initialize the OpenAI language model
 p = Initialize_config()
@@ -14,14 +16,30 @@ assistant_model = p.openai_model  # Assistant model for data extraction
 print("Loaded OpenAI assistant model")
 
 # Create CSV agent for relevant data extraction
-csv_agent = create_csv_agent(assistant_model, "./heart.csv", verbose=True, allow_dangerous_code=True)
+csv_agent = create_csv_agent(
+    assistant_model,
+    "./heart.csv",
+    verbose=True,
+    allow_dangerous_code=True,
+    max_execution_time=240,
+    max_iterations=120
+)
 
 # Function to get relevant data using the assistant model
 def get_relevant_data(question):
-    # Use the assistant model to get relevant data from the CSV
-    relevant_data = csv_agent.run(question)
-    print("Data:",relevant_data)
-    return relevant_data
+    try:
+        # Use 'invoke' with a dictionary for the input question
+        inputs = {"input": question}  # Ensure this key matches what csv_agent expects
+        relevant_data = csv_agent.invoke(inputs)
+        print("Relevant Data:", relevant_data)
+        return relevant_data
+    except ValueError as e:
+        # Handle parsing error manually
+        if "output parsing error" in str(e).lower():
+            print("Parsing error encountered. Please check the input format or adjust the query.")
+            return "Error: Parsing error"
+        else:
+            raise e
 
 # Function to generate response using OpenAI language model
 def generate_response(relevant_data, question):
