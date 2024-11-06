@@ -3,11 +3,22 @@ from initial_config import *
 from langchain import OpenAI
 from langchain_experimental.agents.agent_toolkits import create_csv_agent
 
-# Load the CSV data
-data = pd.read_csv("./heart.csv", nrows=50)  # Load a maximum of 50 rows for performance
-print("Data Loaded Successfully")
-print(data.info())
-print("Number of patients with heart disease:", data[data['target'] == 1].shape[0])
+# Load the CSV data and preprocess it
+def load_and_preprocess_data(file_path):
+    # Read specific columns
+    data = pd.read_csv(file_path, usecols=["age", "sex", "cp", "target"])  # Load only 50 rows for performance
+
+    # Convert categorical columns to human-readable format
+    data['sex'] = data['sex'].apply(lambda x: 'Male' if x == 1 else 'Female')
+    cp_mapping = {0: 'Typical Angina', 1: 'Atypical Angina', 2: 'Non-anginal Pain', 3: 'Asymptomatic'}
+    data['cp'] = data['cp'].map(cp_mapping)
+
+    print("Data Loaded and Preprocessed Successfully")
+    print(data.info())
+    print("Sample Data:\n", data.head())
+    print("Number of patients with heart disease:", data[data['target'] == 1].shape[0])
+
+    return data
 
 # Initialize the OpenAI language model
 p = Initialize_config()
@@ -15,14 +26,17 @@ p.process_openAI_model()
 assistant_model = p.openai_model  # Assistant model for data extraction
 print("Loaded OpenAI assistant model")
 
+# Load and preprocess the CSV data
+data = load_and_preprocess_data("./heart.csv")
+
 # Create CSV agent for relevant data extraction
 csv_agent = create_csv_agent(
     assistant_model,
-    "./heart.csv",
-    verbose=True,
+    "heart.csv",  # Pass the preprocessed DataFrame instead of the file path
+    verbose=False,
     allow_dangerous_code=True,
-    max_execution_time=240,
-    max_iterations=120
+    max_execution_time=120,
+    max_iterations=110
 )
 
 # Function to get relevant data using the assistant model
@@ -31,15 +45,28 @@ def get_relevant_data(question):
         # Use 'invoke' with a dictionary for the input question
         inputs = {"input": question}  # Ensure this key matches what csv_agent expects
         relevant_data = csv_agent.invoke(inputs)
+        
+        # Check if relevant_data is valid
+        if not relevant_data or "invalid" in str(relevant_data.values()).lower():
+            raise ValueError("Model returned invalid content.")
+
         print("Relevant Data:", relevant_data)
         return relevant_data
+    
     except ValueError as e:
-        # Handle parsing error manually
-        if "output parsing error" in str(e).lower():
-            print("Parsing error encountered. Please check the input format or adjust the query.")
-            return "Error: Parsing error"
-        else:
-            raise e
+        print(f"Error encountered: {e}")
+        print("Retrying with modified query...")
+        
+        # Retry with a simpler question or fallback response
+        fallback_question = "Please retrieve data about heart disease based on age, sex, chest pain, and target."
+        try:
+            inputs["input"] = fallback_question
+            relevant_data = csv_agent.invoke(inputs)
+            print("Fallback Relevant Data:", relevant_data)
+            return relevant_data
+        except Exception as fallback_error:
+            print(f"Fallback failed: {fallback_error}")
+            return "Error: Unable to retrieve relevant data"
 
 # Function to generate response using OpenAI language model
 def generate_response(relevant_data, question):
