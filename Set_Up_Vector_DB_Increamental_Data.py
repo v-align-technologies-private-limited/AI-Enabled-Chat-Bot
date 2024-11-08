@@ -157,7 +157,7 @@ class DataProcessor:
         self.pinecone_manager = pinecone_manager
 
         # Possible last modified column names
-        self.modified_columns = ['last_modified_time', 'last_updated_time', 'last_modified_date']
+        self.modified_columns = ['Created Date', 'Date', 'Created Time', 'Created On']
 
     def process_data(self):
         schema_df = self.db_manager.fetch_schema_with_data_types()
