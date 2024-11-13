@@ -17,7 +17,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc"
+db_name="zoho_projects_data"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 app = Flask(__name__)
 CORS(app)
@@ -34,13 +34,15 @@ schema_manager.format_schema()
 user_input=''
 def main(db_name='',schema='',data='',determine_querry=''):
         determine_querry.determine_query_type(data)
-        if determine_querry.query_type=="database":
+        if determine_querry.query_type=="database" and data.lower()!='hi':
                 pine_cone=Pinecone_manager(schema_manager.schema_df)
                 pine_cone.process_user_input(user_input)
                 _, feature_list=pine_cone.process_extracted_features()
+                print(feature_list)
                 if len(feature_list)!=0:
                         pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
                         openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
+                        print("SQL:",openai_manager.sql_query)
                         DB.execute_sql_query(openai_manager.sql_query)
                         print(DB.results)
                         if len(DB.results)!=0:
@@ -53,27 +55,47 @@ def main(db_name='',schema='',data='',determine_querry=''):
                     
                     
                 else:
-                    openai_manager.generate_sql_query(schema_manager.schema_str,user_input)
+                    openai_manager.generate_sql_query(schema_manager.schema_str,data)
+                    print("SQL:",openai_manager.sql_query)
                     DB.execute_sql_query(openai_manager.sql_query)
                     openai_manager.generate_response(user_input,DB.results)
                     return (openai_manager.response)
                 
         else:
-            return (openai_manager.get_answer_from_chatbot(user_input, schema_manager.schema_str,p.openai_model))
-        DB.close_connection()
+            response=openai_manager.get_answer_from_chatbot(user_input, schema_manager.schema_str,p.openai_model)
+            if ("sql" in response.lower()) and (data.lower()!='hi'):
+                start = response.find("```sql") + 6
+                end = response.find("```", start)
+                response = response[start:end].strip()
+                print("SQL:",response)
+                DB.execute_sql_query(response)
+                print(DB.results)
+                if len(DB.results)!=0:
+                        openai_manager.generate_response(user_input,DB.results)
+                        return (openai_manager.response)
+                else:
+                        return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
+        return response
+                
+                
+                
+        #DB.close_connection()
 @app.route('/process', methods=['POST'])
 def process_request():
-    global user_input,conn
+    global user_input,conn,DB
+    conn=DB.connect(DATABASE_DB = f"{db_name}")
     determine_querry=Determine_querry_type(schema_manager.schema_df)
     try:
-        data = request.json
+        '''data = request.json
         key=next(iter(data.keys()))
-        data=data[key]
-        user_input=data
-        result=main(db_name=db_name,schema='public',data=data,determine_querry=determine_querry)
-        return jsonify({"result": result})
+        data=data[key]'''
+        user_input=input("Enter Question:")
+        result=main(db_name=db_name,schema='public',data=user_input,determine_querry=determine_querry)
+        print({"result": result})
+        DB.close_connection()
     except Exception as e:
-        return jsonify({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+        DB.close_connection()
+        print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
@@ -82,9 +104,7 @@ def assign_db():
     db_name=data[key]
     return jsonify({"result":"DB selected successfully"})
     
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0",debug=True,port=5001)
+        
 
         
     
