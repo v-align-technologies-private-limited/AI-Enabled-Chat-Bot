@@ -103,7 +103,8 @@ def assign_db():
     key=next(iter(data.keys()))
     db_name=data[key]
     return jsonify({"result":"DB selected successfully"})
-    
+if __name__ == "__main__":
+    app.run(host="0.0.0.0",debug=True,port=5001)
         
 
         
