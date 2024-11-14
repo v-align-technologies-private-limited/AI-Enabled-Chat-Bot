@@ -98,7 +98,7 @@ class OpenAI_manager:
                     {"role": "system", "content": "You are a helpful assistant specializing in extracting entities that map user input to the relevant tables and columns in the database."}, 
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=5000,
+                max_tokens=6000,
                 temperature=0.2
             )
             
@@ -155,7 +155,7 @@ class OpenAI_manager:
                 {"role": "system", "content": "You are a helpful assistant specializing in generating SQL queries that map user input to the relevant tables and columns in the database."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=5000,  # Token limit for generated completion
+            max_tokens=6000,  # Token limit for generated completion
             temperature=0.2  # Slight temperature for creative output
         )
 
@@ -179,8 +179,8 @@ class OpenAI_manager:
           messages=[
               {"role": "user", "content": prompt}
           ],
-          max_tokens=500,
-          temperature=0.7
+          max_tokens=3000,
+          temperature=0.2
         )
         
         self.response=response.choices[0].message.content     
