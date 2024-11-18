@@ -114,39 +114,42 @@ class OpenAI_manager:
     
     def generate_sql_query(self,processed_schema_str, aug_input):
         prompt = f"""
-        You are a PostgreSQL expert. Given an input question, create a syntactically correct PostgreSQL query and return ONLY the generated query. Use the following guidelines for SQL generation:
-
-        - The input may contain partial or similar names for entities, such as project names, user names, or status descriptions. Handle these using `ILIKE` operators with `%` on both sides of the string to allow flexible matching and accurate querying.
-        - **Do not use column names directly from user input** without validation. Cross-check user terms against the provided database schema and select the most relevant and existing columns.
-        - If the user input mentions a column that doesn't exist (e.g., `due_date`), **substitute it with a semantically similar, valid column** from the schema (e.g., use `end_date` if `due_date` is requested but not found).
-        - Ensure you match project names like 'IIFL Samasta', 'IIfl Samasta', 'IIFL', 'iifl smasta', 'Iiflsmsota' (or any spelling variations) to the correct project name from the database.
-        - Use the column `instnm` whenever the question involves institute names, and ensure it is correctly associated with `unitid` in the query.
-        - When context involves multiple tables, use JOIN operations, ensuring only appropriate columns (e.g., `unitid`) are used for these joins while maintaining referential integrity.
-        - For calculations such as averages or ratios, ensure proper aggregation using `AVG()`, `SUM()`, or other relevant functions, maintaining clarity and correctness in grouped results.
-        - Apply detailed filtering criteria from the input in the `WHERE` clause, using logical operators like `AND` and `OR` to combine conditions effectively.
-        - Use date and timestamp functions like `TO_TIMESTAMP()` and `EXTRACT` to handle date parsing and extraction of date components as needed.
-        - Employ the `GROUP BY` clause when aggregating by categories or attributes for clear grouping.
-        - Maintain readability with table and column aliases, especially for complex joins or subqueries.
-        - Utilize subqueries or Common Table Expressions (CTEs) for breaking down complex logic into simpler, modular parts for better performance and clarity.
-        - Limit the number of rows in the result set to a maximum of 100 rows unless specified otherwise to optimize performance and avoid excessive data output.
-
-        - Ensure comprehensive understanding of user input and intent by interpreting queries from both left to right and right to left to capture full context.
-        - Use a range of SQL operators (`=`, `!=`, `LIKE`, `ILIKE`, `IN`) and functions (`IFNULL`, `ISNULL`, `COALESCE`) as needed to handle specific conditions, null handling, and flexible matching.
-        - Integrate advanced SQL clauses like `CASE` and `HAVING` when addressing conditional logic or grouped results.
-        - Safeguard the handling of NULLs to avoid logical errors, ensuring expressions that involve NULLs behave as expected.
-        - Address complex filtering by using nested conditions and logical operators, aligning the SQL with the nuanced requirements of the user query.
-        - Confirm all table relationships in JOINs are clear and maintain referential integrity to support correct data linkage.
-        - Prioritize performance by avoiding unnecessary complexity or inefficient constructs, focusing on optimized query design.
-        - Handle edge cases where user input may imply similar or interchangeable column names, ensuring the selected columns are contextually appropriate (e.g., using `end_date` instead of `due_date` if the former is present in the schema).
-
-        Ensure the final SQL query is well-structured, efficient, and accurately reflects the user's request based on the provided input. The response should not include explanations, comments, or any other content beyond the generated SQL query.
-
-        Database schema:
-        {processed_schema_str}
-
-        User input:
-        "{aug_input}"
+            You are a PostgreSQL expert. Given an input question, create a syntactically correct PostgreSQL query and return ONLY the generated query. Use the following guidelines for SQL generation:
+        
+            - The input may contain partial or similar names for entities, such as project names, user names, or status descriptions. Handle these using `ILIKE` operators with `%` on both sides of the string to allow flexible matching and accurate querying.
+            - **Do not use column names directly from user input** without validation. Cross-check user terms against the provided database schema and select the most relevant and existing columns.
+            - If the user input mentions a column that doesn't exist (e.g., `due_date`), **substitute it with a semantically similar, valid column** from the schema (e.g., use `end_date` if `due_date` is requested but not found).
+            - Ensure you match project names like 'IIFL Samasta', 'IIfl Samasta', 'IIFL', 'iifl smasta', 'Iiflsmsota' (or any spelling variations) to the correct project name from the database.
+            - Use the column `instnm` whenever the question involves institute names, and ensure it is correctly associated with `unitid` in the query.
+            - When context involves multiple tables, use JOIN operations, ensuring only appropriate columns (e.g., `unitid`) are used for these joins while maintaining referential integrity.
+            - **Whenever using foreign key columns**, always **select the corresponding string column from the related table** for clarity. For example, if `owner_id` from the `projects` table is a foreign key referencing `user_id` in the `users` table, select the `user_name` (or relevant name column) from the `users` table, not just the ID.
+            - For calculations such as averages or ratios, ensure proper aggregation using `AVG()`, `SUM()`, or other relevant functions, maintaining clarity and correctness in grouped results.
+            - Apply detailed filtering criteria from the input in the `WHERE` clause, using logical operators like `AND` and `OR` to combine conditions effectively.
+            - Use date and timestamp functions like `TO_TIMESTAMP()` and `EXTRACT` to handle date parsing and extraction of date components as needed.
+            - Employ the `GROUP BY` clause when aggregating by categories or attributes for clear grouping.
+            - Maintain readability with table and column aliases, especially for complex joins or subqueries.
+            - Utilize subqueries or Common Table Expressions (CTEs) for breaking down complex logic into simpler, modular parts for better performance and clarity.
+            - Limit the number of rows in the result set to a maximum of 100 rows unless specified otherwise to optimize performance and avoid excessive data output.
+        
+            - Ensure comprehensive understanding of user input and intent by interpreting queries from both left to right and right to left to capture full context.
+            - Use a range of SQL operators (`=`, `!=`, `LIKE`, `ILIKE`, `IN`) and functions (`IFNULL`, `ISNULL`, `COALESCE`) as needed to handle specific conditions, null handling, and flexible matching.
+            - Integrate advanced SQL clauses like `CASE` and `HAVING` when addressing conditional logic or grouped results.
+            - Safeguard the handling of NULLs to avoid logical errors, ensuring expressions that involve NULLs behave as expected.
+            - Address complex filtering by using nested conditions and logical operators, aligning the SQL with the nuanced requirements of the user query.
+            - Confirm all table relationships in JOINs are clear and maintain referential integrity to support correct data linkage.
+            - Prioritize performance by avoiding unnecessary complexity or inefficient constructs, focusing on optimized query design.
+            - Handle edge cases where user input may imply similar or interchangeable column names, ensuring the selected columns are contextually appropriate (e.g., using `end_date` instead of `due_date` if the former is present in the schema).
+            - **For foreign key relationships, always ensure that the related table’s string column (such as user names, project names, etc.) is also selected when referring to the foreign key.**
+        
+            Ensure the final SQL query is well-structured, efficient, and accurately reflects the user's request based on the provided input. The response should not include explanations, comments, or any other content beyond the generated SQL query.
+        
+            Database schema:
+            {processed_schema_str}
+        
+            User input:
+            "{aug_input}"
         """
+
 
         # Call GPT-4o-mini-2024-07-18 model using chat completion API
         response = openai.chat.completions.create(
