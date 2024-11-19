@@ -59,53 +59,66 @@ class OpenAI_manager:
         
         ### Objectives
         1. **Extract Relevant Features**:
-           - Identify and extract meaningful text-based features that match the user input, specifically focusing on `varchar`, `char`, or `text` columns in the schema.
-           - Resolve **foreign key references** to their descriptive string values:
-             - For example, if `owner_id` in the `projects` table is a foreign key referencing `user_id` in the `users` table, fetch the `user_name` from the `users` table.
-           - Ensure all extracted entities are represented using descriptive values and not raw IDs.
-        
+           - Identify and extract **text-based features** that match the user input. Focus only on columns with data types like `varchar`, `char`, `text`, or other string-based fields in the schema.
+           - **Resolve foreign key references** to their descriptive string values if they are relevant, but **only include the string columns in the output**:
+             - For example, if `assigneeid` in the `issues_zoho_projects_` table is a foreign key pointing to a `user_name` field in a related table (e.g., `users_zoho_projects_`), **only include the `user_name` column**, not the integer foreign key `assigneeid`.
+           - **Do not include non-text columns** like integers, even if they are referenced in relationships (e.g., `assigneeid`, `project_id`). Include only relevant text columns that help answer the user’s query.
+    
         2. **Expected Output Structure**:
-           - The output should be a JSON object containing tables and their corresponding relevant fields.
-           - Only include tables and columns where entities are explicitly mentioned in the query. If only `user_name` is mentioned, return only the `users` table with `user_name`.
-           - If both a `project_name` and `user_name` are mentioned in the query, return both the `projects` and `users` tables with their respective fields.
-           - If no relevant entities are found, return an empty JSON object: `{{}}`.
-        
-        3. **Ensure Schema Understanding**:
-           - Interpret the database schema accurately to understand relationships and context. Prioritize extracting fields that provide the most clarity to the user.
-           - Avoid including irrelevant tables, columns, or placeholders in the output.
-        
-        4. **Handle Foreign Key Relationships**:
-           - Always use the descriptive column from the related table when dealing with foreign keys. For example:
-             - Replace `owner_id` in the `projects` table with `user_name` from the `users` table.
-           - If the foreign key relationship isn't explicitly needed for the query, include only the string value that adds clarity to the output.
-        
+           - The output should be a **JSON object** containing only tables and their corresponding relevant **text-based columns**.
+           - If a `user_name` is mentioned in the query, include the `users_zoho_projects_` table with the `user_name` field.
+           - If only an `assigneeid` (foreign key) is mentioned in the query, **exclude** it. If it points to a string column like `user_name` in a related table, **include only the `user_name`** from that table.
+           - If no relevant text-based entities are found in the schema, return an empty JSON object: `{{}}`.
+    
+        3. **Schema Understanding**:
+           - **Understand the relationships** between tables and resolve foreign key relationships accurately. However, only include text-based columns from the schema.
+           - **Prioritize text-based fields** that provide meaningful data related to the user’s query.
+           - Exclude any integer fields like foreign keys from the output unless they point to a descriptive string column in a related table.
+    
+        4. **Foreign Key Handling**:
+           - If a foreign key column exists (like `assigneeid` or `project_id`) but points to a non-string field (such as an integer), **do not include the foreign key column**.
+           - If the foreign key points to a string column (like `user_name`), **only include the string column** from the related table (e.g., `users_zoho_projects_` for `user_name`).
+    
         5. **Contextual Clarity**:
-           - Validate that the chosen table and column names align with the user's query intent. When in doubt, prioritize tables and columns that directly match the user's query context.
-        
+           - Ensure that the chosen table and column names are directly relevant to the user's query.
+           - When in doubt, prioritize including **string-based columns** that clarify and directly match the user’s query context.
+    
         6. **Valid and Clean Output**:
-           - Ensure the output is valid JSON containing only tables and fields with actual values.
-           - Avoid placeholders, comments, or empty fields in the output.
+           - Ensure that the output is valid JSON and contains only **string columns** with actual values.
+           - Avoid placeholders, comments, or any empty fields in the output.
+    
+        ### User Query Examples and Expected Output:
         
-        ### User Query Example and Expected Output:
-        - **User Input 1**: "What are the projects assigned to Basavaraj?"
+        - **User Input 1**: "What is the status of project Voice enabled which is assigned to Basavaraj?"
         - **Expected Output 1**:
           {{
-               "users": {{
-                   "user_name": "Basavaraj"
-               }}
-           }}
+              "projects": {{
+                  "project_name": "Voice enabled"
+              }},
+              "users_zoho_projects_": {{
+                  "username": "Basavaraj"
+              }}
+          }}
     
-        - **User Input 2**: "What is the status of project Voice enabled which is assigned to Basavaraj?"
+        - **User Input 2**: "What are the tasks assigned to Dharani?"
         - **Expected Output 2**:
+          
           {{
-               "projects": {{
-                   "project_name": "Voice enabled"
-               }},
-               "users": {{
-                   "user_name": "Basavaraj"
-               }}
-           }}
-        """
+              "users_zoho_projects_": {{
+                  "username": "Dharani"
+              }}
+          }}
+          
+    
+        - **User Input 3**: "Who is the assignee of issue XYZ?"
+        - **Expected Output 3**:
+          {{
+              "issues_zoho_projects_": {{
+                  "bugtitle": "XYZ"
+              }}
+          }}
+       
+       """
 
         try:
             # Use the correct OpenAI chat completion method with the refined prompt
