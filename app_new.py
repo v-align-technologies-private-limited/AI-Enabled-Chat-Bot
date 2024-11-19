@@ -88,19 +88,19 @@ def process_request():
     conn=DB.connect(DATABASE_DB = f"{db_name}")
     determine_querry=Determine_querry_type(schema_manager.schema_df)
     try:
-        '''data = request.json
+        data = request.json
         key=next(iter(data.keys()))
-        data=data[key]'''
-        user_input=input("Enter Question:")
+        data=data[key]
+        user_input=data
         result=main(db_name=db_name,schema='public',data=user_input,determine_querry=determine_querry)
-        print({"result": result})
-        #return jsonyfy({"result": result})
+        #print({"result": result})
+        return jsonyfy({"result": result})
         DB.close_connection()
     except Exception as e:
-        #return jsonyfy({"result":f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
         DB.close_connection()
-        print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
-'''
+        return jsonyfy({"result":f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+        #print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
@@ -108,15 +108,9 @@ def assign_db():
     key=next(iter(data.keys()))
     db_name=data[key]
     return jsonify({"result":"DB selected successfully"})
-    
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0",debug=True,port=5001)'''
-while True:
-    process_request()
-    ch=input("Continue(0/1)?")
-    if ch!=str(1):
-            break
+    app.run(host="0.0.0.0",debug=True,port=5001)
+
         
 
         
