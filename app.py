@@ -17,7 +17,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="zoho_projects_data"
+db_name="zoho_projects_data_copy"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 app = Flask(__name__)
 CORS(app)
