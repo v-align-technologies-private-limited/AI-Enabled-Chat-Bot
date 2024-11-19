@@ -66,11 +66,10 @@ def main(db_name='',schema='',data='',determine_querry=''):
                 print("SQL:",response)
                 DB.execute_sql_query(response)
                 print(DB.results)
-                if len(DB.results)!=0:
-                        openai_manager.generate_response(user_input,DB.results)
-                        return (openai_manager.response)
-                else:
-                        return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
+               
+                openai_manager.generate_response(user_input,DB.results)
+                return (openai_manager.response)
+              
         return response
                 
                 
