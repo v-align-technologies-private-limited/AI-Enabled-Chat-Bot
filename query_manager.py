@@ -27,6 +27,12 @@ class Determine_querry_type:
                 if fuzz.partial_ratio(query, option) >= self.threshold:
                     return True
             return False
+        # Function to check substring match
+        def is_partial_match(query, options):
+            for option in options:
+                if query in option or option in query:
+                    return True
+            return False
         
         # Check if user query matches any table or column name
         if is_fuzzy_match(user_query_lower, table_names) or \
