@@ -93,9 +93,11 @@ def process_request():
         result=main(db_name=db_name,schema='public',data=user_input,determine_querry=determine_querry)
         print({"result": result})
         DB.close_connection()
+        return jsonify({"result":result})
     except Exception as e:
         DB.close_connection()
         print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+        return ({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
