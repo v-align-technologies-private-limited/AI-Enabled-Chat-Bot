@@ -58,36 +58,53 @@ class OpenAI_manager:
         The user has input: "{user_input}"
         
         ### Objectives
-        1. **Extract Relevant Text-Based Features**:
-        - Focus solely on identifying features and values that match text-based columns (`varchar`, `char`, or `text`) in the schema.
-        - **Ignore** columns with data types other than `varchar`, `char`, or `text`.
-        - **Exclude** any time references unless they directly relate to specific text-based entities that add context to the user’s query. If the query only references time without relevant entities, return an empty JSON object: `{{}}`.
+        1. **Extract Relevant Features**:
+           - Identify and extract meaningful text-based features that match the user input, specifically focusing on `varchar`, `char`, or `text` columns in the schema.
+           - Resolve **foreign key references** to their descriptive string values:
+             - For example, if `owner_id` in the `projects` table is a foreign key referencing `user_id` in the `users` table, fetch the `user_name` from the `users` table.
+           - Ensure all extracted entities are represented using descriptive values and not raw IDs.
         
-        2. **Understand User Intent**:
-        - Focus on relevant entities that align with the user’s query context. For example, if the query is about projects, include only project-related fields (e.g., `project_name`) and ignore unrelated columns.
-        - Ensure the response reflects table and column names that best match the user's intended context.
-
-        3. **Output Requirements**:
-        - Return a JSON object containing only tables and columns with meaningful, non-empty values.
-        - Drop any fields or tables where the value is empty, `null`, or a placeholder.
-        - Format the output JSON to include only keys for tables and fields with actual values. If no relevant entities are found, return an empty JSON object `{{}}`.
-        - Example: if the user requests a project name and the project has no owner, exclude the `owner` field:
-            ```json
-            {{
-                "projects": {{
-                    "project_name": "Project IIFL RPA"
-                }}
-            }}
-            ```
+        2. **Expected Output Structure**:
+           - The output should be a JSON object containing tables and their corresponding relevant fields.
+           - Only include tables and columns where entities are explicitly mentioned in the query. If only `user_name` is mentioned, return only the `users` table with `user_name`.
+           - If both a `project_name` and `user_name` are mentioned in the query, return both the `projects` and `users` tables with their respective fields.
+           - If no relevant entities are found, return an empty JSON object: `{{}}`.
         
-        4. **Ensure Valid JSON**:
-        - Ensure the output is valid JSON containing only tables and fields with actual values. If no relevant entities are found, return an empty JSON object `{{}}`.
+        3. **Ensure Schema Understanding**:
+           - Interpret the database schema accurately to understand relationships and context. Prioritize extracting fields that provide the most clarity to the user.
+           - Avoid including irrelevant tables, columns, or placeholders in the output.
         
-        5. **No Placeholders or Comments**:
-        - Do not include placeholders, comments, or fields without actual values. Focus only on values directly tied to the schema and user’s query.
+        4. **Handle Foreign Key Relationships**:
+           - Always use the descriptive column from the related table when dealing with foreign keys. For example:
+             - Replace `owner_id` in the `projects` table with `user_name` from the `users` table.
+           - If the foreign key relationship isn't explicitly needed for the query, include only the string value that adds clarity to the output.
         
-        6. **Contextual Clarity**:
-        - Validate that chosen table and column names fit the user's question context. When in doubt, prioritize accuracy and relevance over trying to cover all possible terms.
+        5. **Contextual Clarity**:
+           - Validate that the chosen table and column names align with the user's query intent. When in doubt, prioritize tables and columns that directly match the user's query context.
+        
+        6. **Valid and Clean Output**:
+           - Ensure the output is valid JSON containing only tables and fields with actual values.
+           - Avoid placeholders, comments, or empty fields in the output.
+        
+        ### User Query Example and Expected Output:
+        - **User Input 1**: "What are the projects assigned to Basavaraj?"
+        - **Expected Output 1**:
+          {{
+               "users": {{
+                   "user_name": "Basavaraj"
+               }}
+           }}
+    
+        - **User Input 2**: "What is the status of project Voice enabled which is assigned to Basavaraj?"
+        - **Expected Output 2**:
+          {{
+               "projects": {{
+                   "project_name": "Voice enabled"
+               }},
+               "users": {{
+                   "user_name": "Basavaraj"
+               }}
+           }}
         """
 
         try:
