@@ -45,15 +45,11 @@ def main(db_name='',schema='',data='',determine_querry=''):
                         print("SQL:",openai_manager.sql_query)
                         DB.execute_sql_query(openai_manager.sql_query)
                         print(DB.results)
-                        if len(DB.results)!=0:
-                                openai_manager.generate_response(pine_cone.augmented_input,DB.results)
-                                pine_cone.clear_all()
-                                return (openai_manager.response)
-                        else:
-                                pine_cone.clear_all()
-                                return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
-                    
-                    
+                        openai_manager.generate_response(pine_cone.augmented_input,DB.results)
+                        pine_cone.clear_all()
+                        return (openai_manager.response)
+
+                      
                 else:
                     openai_manager.generate_sql_query(schema_manager.schema_str,data)
                     print("SQL:",openai_manager.sql_query)
