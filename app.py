@@ -86,17 +86,15 @@ def process_request():
     conn=DB.connect(DATABASE_DB = f"{db_name}")
     determine_querry=Determine_querry_type(schema_manager.schema_df)
     try:
-        '''data = request.json
+        data = request.json
         key=next(iter(data.keys()))
-        data=data[key]'''
-        user_input=input("Enter Question:")
-        result=main(db_name=db_name,schema='public',data=user_input,determine_querry=determine_querry)
-        print({"result": result})
+        data=data[key]
+        user_input=data
+        result=main(db_name=db_name,schema='public',data=data,determine_querry=determine_querry)
         DB.close_connection()
         return jsonify({"result":result})
     except Exception as e:
         DB.close_connection()
-        print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
         return ({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
