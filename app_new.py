@@ -45,18 +45,14 @@ def main(db_name='',schema='',data='',determine_querry=''):
                         
                         DB.execute_sql_query(openai_manager.sql_query)
                         print(DB.results)
-                        if len(DB.results)!=0:
-                                openai_manager.generate_response(pine_cone.augmented_input,DB.results)
-                                pine_cone.clear_all()
-                                return (openai_manager.response)
-                        else:
-                                pine_cone.clear_all()
-                                return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
+                        openai_manager.generate_response(pine_cone.augmented_input,DB.results)
+                        pine_cone.clear_all()
+                        return (openai_manager.response)
+                        
                     
                     
                 else:
                     openai_manager.generate_sql_query(schema_manager.schema_str,data)
-                    
                     DB.execute_sql_query(openai_manager.sql_query)
                     openai_manager.generate_response(user_input,DB.results)
                     return (openai_manager.response)
@@ -70,11 +66,8 @@ def main(db_name='',schema='',data='',determine_querry=''):
                 print("SQL:",response)
                 DB.execute_sql_query(response)
                 print(DB.results)
-                if len(DB.results)!=0:
-                        openai_manager.generate_response(user_input,DB.results)
-                        return (openai_manager.response)
-                else:
-                        return ("I'm sorry, but I'm unable to provide results. Could you please clarify your query so I can assist you better?")
+                openai_manager.generate_response(user_input,DB.results)
+                return (openai_manager.response)
         return response
                 
                 
@@ -86,19 +79,20 @@ def process_request():
     conn=DB.connect(DATABASE_DB = f"{db_name}")
     determine_querry=Determine_querry_type(schema_manager.schema_df)
     try:
-        '''data = request.json
+        data = request.json
         key=next(iter(data.keys()))
-        data=data[key]'''
-        user_input=input("Enter Question:")
+        data=data[key]
+        user_input=data
         result=main(db_name=db_name,schema='public',data=user_input,determine_querry=determine_querry)
-        print({"result": result})
-        #return jsonyfy({"result": result})
+        # print({"result": result})
+        return jsonyfy({"result": result})
         DB.close_connection()
     except Exception as e:
-        #return jsonyfy({"result":f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
         DB.close_connection()
-        print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
-'''
+        return jsonyfy({"result":f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+
+        # print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
@@ -109,12 +103,13 @@ def assign_db():
     
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0",debug=True,port=5001)'''
+    app.run(host="0.0.0.0",debug=True,port=5001)
+'''
 while True:
     process_request()
     ch=input("Continue(0/1)?")
     if ch!=str(1):
-            break
+            break'''
         
 
         
