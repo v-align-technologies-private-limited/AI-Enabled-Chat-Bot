@@ -33,7 +33,7 @@ schema_manager.format_schema()
 logs={}
                                     
 user_input=''
-def main(db_name='',schema='',data='',determine_querry=''):
+def main(db_name='',schema='',data='',determine_querry='',key=''):
         global user_input,logs
         determine_querry.determine_query_type(data)
         if determine_querry.query_type=="database" and data.lower()!='hi':
