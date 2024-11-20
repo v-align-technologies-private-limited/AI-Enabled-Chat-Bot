@@ -4,7 +4,7 @@ from db_manager import *
 from initial_config import *
 from db_manager import *
 from schema_manager import *
-from pinecone_manager import *
+from pinecone_manager_update import *
 from openai_manager import *
 from query_manager import *
 
@@ -30,9 +30,11 @@ query = f"""
 schema_manager=Schema_manager(conn,query,schema)
 schema_manager.fetch_schema_with_data_types()
 schema_manager.format_schema()
+logs={}
                                     
 user_input=''
 def main(db_name='',schema='',data='',determine_querry=''):
+        global user_input,logs
         determine_querry.determine_query_type(data)
         if determine_querry.query_type=="database" and data.lower()!='hi':
                 pine_cone=Pinecone_manager(schema_manager.schema_df)
@@ -40,18 +42,30 @@ def main(db_name='',schema='',data='',determine_querry=''):
                 _, feature_list=pine_cone.process_extracted_features()
                 print(feature_list)
                 if len(feature_list)!=0:
-                        pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
-                        openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
-                        print("SQL:",openai_manager.sql_query)
-                        DB.execute_sql_query(openai_manager.sql_query)
-                        print(DB.results)
-                        openai_manager.generate_response(pine_cone.augmented_input,DB.results)
-                        pine_cone.clear_all()
-                        return (openai_manager.response)
-
-                      
+                    #checking whether user sent question 
+                    if key=="Query":
+                        user_input=data
+                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
+                    #if input is user seletions for entity
+                    else :
+                        pine_cone.call_query_pinecone1(user_input,p.pinecone_index,p.embedding_model,data)
+                        res=''
+                    if isinstance(res, dict):
+                        logs['options']=res
+                        return res
+                    openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
+                    logs['aug ip']=pine_cone.augmented_input
+                    DB.execute_sql_query(openai_manager.sql_query)
+                    logs['sql']=openai_manager.sql_query
+                    openai_manager.generate_response(pine_cone.augmented_input,DB.results)
+                    pine_cone.clear_all()
+                    return (openai_manager.response)
+   
                 else:
                     openai_manager.generate_sql_query(schema_manager.schema_str,data)
+                    logs['options']=None
+                    logs['aug ip']=data
+                    logs['sql']=openai_manager.sql_query
                     print("SQL:",openai_manager.sql_query)
                     DB.execute_sql_query(openai_manager.sql_query)
                     openai_manager.generate_response(user_input,DB.results)
@@ -63,6 +77,9 @@ def main(db_name='',schema='',data='',determine_querry=''):
                 start = response.find("```sql") + 6
                 end = response.find("```", start)
                 response = response[start:end].strip()
+                logs['aug ip']=user_input
+                logs['sql']=openai_manager.sql_query
+                logs['options']=None
                 print("SQL:",response)
                 DB.execute_sql_query(response)
                 print(DB.results)
@@ -77,20 +94,28 @@ def main(db_name='',schema='',data='',determine_querry=''):
         #DB.close_connection()
 @app.route('/process', methods=['POST'])
 def process_request():
-    global user_input,conn,DB
+    global user_input,conn,logs,DB
     conn=DB.connect(DATABASE_DB = f"{db_name}")
     determine_querry=Determine_querry_type(schema_manager.schema_df)
     try:
         data = request.json
         key=next(iter(data.keys()))
         data=data[key]
-        user_input=data
-        result=main(db_name=db_name,schema='public',data=data,determine_querry=determine_querry)
-        DB.close_connection()
-        return jsonify({"result":result})
+        print(2)
+        if key=='Query':
+            user_input=data
+            print(3)
+        result=main(db_name=db_name,schema='public',key=key,data=data,determine_querry=determine_querry)
+        if isinstance(result, dict):
+            return jsonify({"selection":result})
+        res={"result": result}
+        res.update(logs)
+        logs.clear()
+        DB.close_connection()   
+        return jsonify(res)
     except Exception as e:
         DB.close_connection()
-        return ({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+        return jsonify({"result": str(e),'logs':"Error"})
 @app.route('/select_db', methods=['POST'])
 def assign_db():
     global db_name
@@ -100,7 +125,3 @@ def assign_db():
     return jsonify({"result":"DB selected successfully"})
 if __name__ == "__main__":
     app.run(host="0.0.0.0",debug=True,port=5001)
-        
-
-        
-    
