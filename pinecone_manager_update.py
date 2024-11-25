@@ -3,6 +3,7 @@ import re
 import json
 import numpy as np
 from openai_manager import *
+import torch
 class Pinecone_manager:
     def __init__(self, schema_df):
         self.NAMESPACE = []  # Replace with your namespace
@@ -113,7 +114,7 @@ class Pinecone_manager:
                     continue  # Skip to the next column if no value is found
 
                 # Generate the query embedding for the entity value
-                query_embedding = self.embedding_model.encode([entity_value])[0]
+                #query_embedding = self.embedding_model.encode([entity_value])[0]
                 #query_embedding = np.array(query_embedding, dtype=np.float32)
                 inputs = self.tokenizer(entity_value, return_tensors="pt", padding=True, truncation=True)
                 with torch.no_grad():
@@ -149,7 +150,7 @@ class Pinecone_manager:
                         for match in matches[1:]:
                             print(match['score'])
                             score_diff = best_score - match['score']
-                            if score_diff < 0.27:
+                            if score_diff < 0.2:
                                 selection_required = True
                                 break
                             else:
