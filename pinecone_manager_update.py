@@ -14,6 +14,7 @@ class Pinecone_manager:
         self.extracted_Features = None
         self.cleaned_feature_dict = None
         self.embedding_model = None
+        self.tokenizer= None
         self.pinecone_index = None
         self.selection={}
         self.selection_required=False
@@ -66,16 +67,19 @@ class Pinecone_manager:
             self.columnnames[key] = extracted_dict[key]
     #reframe the input with selected values
     def call_query_pinecone1(self, user_input, p_i, e_model, data):
+        print(data)
         for x in data.keys():
+            print(x)
             pattern = re.escape(x)
             user_input=re.sub(pattern, data[x], user_input, flags=re.IGNORECASE)
         self.augmented_input=user_input
         self.selection_required=False
         
     #check if any multiple values for each entity found in vectorDB
-    def call_query_pinecone(self, user_input, p_i, e_model):
+    def call_query_pinecone(self, user_input, p_i, e_model, tokenizer):
         self.pinecone_index = p_i
         self.embedding_model = e_model
+        self.tokenizer=tokenizer
         for key, val in self.cleaned_feature_dict.items():
             columns = list(val.keys())
             if self.augmented_input == '':
@@ -99,6 +103,7 @@ class Pinecone_manager:
 
         flat_entities = flatten_dict(self.cleaned_feature_dict)
         for column_name in columns:
+            
             if column_name not in self.searched_cols:
                 self.searched_cols.append(column_name)
 
@@ -109,7 +114,12 @@ class Pinecone_manager:
 
                 # Generate the query embedding for the entity value
                 query_embedding = self.embedding_model.encode([entity_value])[0]
-                query_embedding = np.array(query_embedding, dtype=np.float32)
+                #query_embedding = np.array(query_embedding, dtype=np.float32)
+                inputs = self.tokenizer(entity_value, return_tensors="pt", padding=True, truncation=True)
+                with torch.no_grad():
+                    
+                    outputs = self.embedding_model(**inputs)
+                query_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy().astype(np.float32)
 
                 try:
                     result = self.pinecone_index.query(
@@ -129,14 +139,17 @@ class Pinecone_manager:
 
                         # Check if multiple matches have a significant score difference
                         best_match = matches[0]
+                        
                         best_score = best_match['score']
+                        print(best_score)
                         selection_required = False
                         selected_match = best_match['metadata'].get('unique_value', entity_value)
 
                         # Check if any other match has a score difference < 0.1
                         for match in matches[1:]:
+                            print(match['score'])
                             score_diff = best_score - match['score']
-                            if score_diff < 0.07:
+                            if score_diff < 0.27:
                                 selection_required = True
                                 break
                             else:

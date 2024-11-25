@@ -8,7 +8,7 @@ from datetime import datetime
 import spacy
 nlp = spacy.load("en_core_web_sm")
 class Determine_querry_type:
-    def __init__(self,schema_df, threshold=75):
+    def __init__(self,schema_df, threshold=60):
         self.query_type="knowledge"
         self.user_query=''
         self.schema_df=schema_df
@@ -36,7 +36,9 @@ class Determine_querry_type:
         
         # Check if user query matches any table or column name
         if is_fuzzy_match(user_query_lower, table_names) or \
-           is_fuzzy_match(user_query_lower, column_names):
+           is_fuzzy_match(user_query_lower, column_names) or \
+           is_partial_match(user_query_lower, table_names) or \
+           is_partial_match(user_query_lower, column_names):
             self.query_type="database"
         else:
             self.query_type="knowledge"

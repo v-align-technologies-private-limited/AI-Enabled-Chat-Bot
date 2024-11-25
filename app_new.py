@@ -5,7 +5,7 @@ from initial_config1 import *
 from db_manager import *
 from schema_manager import *
 from pinecone_manager1 import *
-from openai_manager import *
+from openai_manager1 import *
 from query_manager import *
 from symentic_word_manager import *
 import warnings
@@ -17,7 +17,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="zoho_projects_data"
+db_name="zoho_projects_data_copy"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 app = Flask(__name__)
 CORS(app)
@@ -85,11 +85,11 @@ def process_request():
         user_input=data
         result=main(db_name=db_name,schema='public',data=user_input,determine_querry=determine_querry)
         # print({"result": result})
-        return jsonyfy({"result": result})
+        return jsonify({"result": result})
         DB.close_connection()
     except Exception as e:
         DB.close_connection()
-        return jsonyfy({"result":f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
+        return jsonify({"result":f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
 
         # print({"result": f"There is an issue with query genration, query can not be executed with selected db please provide proper query{e}"})
 

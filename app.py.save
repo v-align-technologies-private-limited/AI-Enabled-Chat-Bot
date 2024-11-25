@@ -17,7 +17,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc"
+db_name="zoho_projects_data_copy"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 app = Flask(__name__)
 CORS(app)
@@ -34,12 +34,10 @@ logs={}
                                     
 user_input=''
 def main(db_name='',schema='',data='',determine_querry='',key=''):
-        print("Database Schema", schema)
         global user_input,logs
         logs['options']=None
-        determine_querry.determine_query_type(data)
+        #determine_querry.determine_query_type(data)
         if determine_querry.query_type=="database" and user_input.lower()!='hi':
-                
                 pine_cone=Pinecone_manager(schema_manager.schema_df)
                 pine_cone.process_user_input(user_input)
                 _, feature_list=pine_cone.process_extracted_features()
@@ -48,7 +46,7 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                     #checking whether user sent question 
                     if key=="Query":
                         user_input=data
-                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model,p.tokenizer)
+                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
                     #if input is user seletions for entity
                     else :
                         print("callpinecone1")
@@ -85,7 +83,6 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                 logs['aug_ip']=user_input
                 logs['sql']=openai_manager.sql_query
                 print("SQL:",response)
-                print("Basavaraj Not Reconizsed")
                 DB.execute_sql_query(response)
                 print(DB.results)
                
@@ -101,7 +98,9 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
 def process_request():
     global user_input,conn,logs,DB
     conn=DB.connect(DATABASE_DB = f"{db_name}")
+    print(conn)
     determine_querry=Determine_querry_type(schema_manager.schema_df)
+    prin
     try:
         data = request.json
         key=next(iter(data.keys()))

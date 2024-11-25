@@ -1,4 +1,5 @@
 import configparser
+from transformers import AutoTokenizer, AutoModel
 import openai
 import pandas as pd
 import re
@@ -34,7 +35,8 @@ class Config:
     MODEL_NAME = config['model']['name']
 class Initialize_config:
     def __init__(self):
-        self.embedding_model=SentenceTransformer(Config.MODEL_NAME)
+        self.embedding_model=AutoModel.from_pretrained(Config.MODEL_NAME)
+        self.tokenizer = AutoTokenizer.from_pretrained(Config.MODEL_NAME)
         self.pinecone_index=None
         self.openai_model=None
         self.prompt_template = None

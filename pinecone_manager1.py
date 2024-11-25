@@ -2,7 +2,7 @@ import pandas as pd
 import re
 import json
 import numpy as np
-from openai_manager import OpenAI_manager
+from openai_manager1 import OpenAI_manager
 import torch
 from symentic_word_manager import *
 class Pinecone_manager:
