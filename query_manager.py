@@ -17,6 +17,9 @@ class Determine_querry_type:
         pass
     def determine_query_type(self,user_query):
         self.user_query=user_query
+        if isinstance(self.user_query, dict):
+            self.query_type='database'
+            return
         user_query_lower = self.user_query.lower()
         table_names = self.schema_df['table_name'].str.lower().unique()
         column_names = self.schema_df['column_name'].str.lower().unique()
