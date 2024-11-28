@@ -17,7 +17,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="zoho_projects_data_copy"
+db_name="zoho_projects_data_v2"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 app = Flask(__name__)
 CORS(app)
@@ -34,9 +34,12 @@ logs={}
                                     
 user_input=''
 def main(db_name='',schema='',data='',determine_querry='',key=''):
+        print("Database Schema", schema)
         global user_input,logs
+        logs['options']=None
         determine_querry.determine_query_type(data)
-        if determine_querry.query_type=="database" and data.lower()!='hi':
+        if determine_querry.query_type=="database" and user_input.lower()!='hi':
+                
                 pine_cone=Pinecone_manager(schema_manager.schema_df)
                 pine_cone.process_user_input(user_input)
                 _, feature_list=pine_cone.process_extracted_features()
@@ -45,16 +48,18 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                     #checking whether user sent question 
                     if key=="Query":
                         user_input=data
-                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model)
+                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model,p.tokenizer)
                     #if input is user seletions for entity
                     else :
+                        print("callpinecone1")
                         pine_cone.call_query_pinecone1(user_input,p.pinecone_index,p.embedding_model,data)
                         res=''
                     if isinstance(res, dict):
                         logs['options']=res
+                        print("Res:",res)
                         return res
                     openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.augmented_input)
-                    logs['aug ip']=pine_cone.augmented_input
+                    logs['aug_ip']=pine_cone.augmented_input
                     DB.execute_sql_query(openai_manager.sql_query)
                     logs['sql']=openai_manager.sql_query
                     openai_manager.generate_response(pine_cone.augmented_input,DB.results)
@@ -64,7 +69,7 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                 else:
                     openai_manager.generate_sql_query(schema_manager.schema_str,data)
                     logs['options']=None
-                    logs['aug ip']=data
+                    logs['aug_ip']=data
                     logs['sql']=openai_manager.sql_query
                     print("SQL:",openai_manager.sql_query)
                     DB.execute_sql_query(openai_manager.sql_query)
@@ -73,19 +78,21 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                 
         else:
             response=openai_manager.get_answer_from_chatbot(user_input, schema_manager.schema_str,p.openai_model)
-            if ("sql" in response.lower()) and (data.lower()!='hi'):
+            if ("sql" in response.lower()) and (user_input.lower()!='hi'):
                 start = response.find("```sql") + 6
                 end = response.find("```", start)
                 response = response[start:end].strip()
-                logs['aug ip']=user_input
+                logs['aug_ip']=user_input
                 logs['sql']=openai_manager.sql_query
-                logs['options']=None
                 print("SQL:",response)
+                print("Basavaraj Not Reconizsed")
                 DB.execute_sql_query(response)
-                print(DB.results)
-               
+                print(DB.results)               
                 openai_manager.generate_response(user_input,DB.results)
                 return (openai_manager.response)
+            else:
+                logs['aug_ip']=user_input
+                logs['sql']=None
               
         return response
                 
@@ -101,17 +108,19 @@ def process_request():
         data = request.json
         key=next(iter(data.keys()))
         data=data[key]
-        print(2)
+        print(data)
         if key=='Query':
             user_input=data
             print(3)
         result=main(db_name=db_name,schema='public',key=key,data=data,determine_querry=determine_querry)
         if isinstance(result, dict):
-            return jsonify({"selection":result})
+            print("Result in process:",result)
+            return jsonify(result)
         res={"result": result}
         res.update(logs)
         logs.clear()
-        DB.close_connection()   
+        #DB.close_connection()
+        print("Selection Results", res)   
         return jsonify(res)
     except Exception as e:
         DB.close_connection()

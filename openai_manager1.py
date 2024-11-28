@@ -1,4 +1,4 @@
-from initial_config import *
+from initial_config1 import *
 import pandas as pd
 import re
 import json
@@ -100,7 +100,7 @@ class OpenAI_manager:
               }}
           }}
     
-        - **User Input 2**: "What are the projects managed or owned by Dharani?"
+        - **User Input 2**: "What are the tasks assigned to Dharani?"
         - **Expected Output 2**:
           
           {{
