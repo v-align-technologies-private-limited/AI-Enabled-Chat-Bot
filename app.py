@@ -17,7 +17,7 @@ p=Initialize_config()
 p.assign_pinecone_index()
 p.process_openAI_model()
 p.set_prompt_template()
-db_name="python_test_poc"
+db_name="zoho_projects_data_v2"
 conn = DB.connect(DATABASE_DB = f"{db_name}")
 app = Flask(__name__)
 CORS(app)
@@ -87,10 +87,12 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                 print("SQL:",response)
                 print("Basavaraj Not Reconizsed")
                 DB.execute_sql_query(response)
-                print(DB.results)
-               
+                print(DB.results)               
                 openai_manager.generate_response(user_input,DB.results)
                 return (openai_manager.response)
+            else:
+                logs['aug_ip']=user_input
+                logs['sql']=None
               
         return response
                 
@@ -117,7 +119,7 @@ def process_request():
         res={"result": result}
         res.update(logs)
         logs.clear()
-        DB.close_connection()
+        #DB.close_connection()
         print("Selection Results", res)   
         return jsonify(res)
     except Exception as e:

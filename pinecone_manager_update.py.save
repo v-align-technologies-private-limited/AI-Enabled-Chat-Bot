@@ -68,7 +68,7 @@ class Pinecone_manager:
             self.columnnames[key] = extracted_dict[key]
     #reframe the input with selected values
     def call_query_pinecone1(self, user_input, p_i, e_model, data):
-        print(data)
+        print("in pine cone1 data",data)
         for x in data.keys():
             print(x)
             pattern = re.escape(x)
@@ -150,7 +150,7 @@ class Pinecone_manager:
                         for match in matches[1:]:
                             print("MAtch score:",match['score'])
                             score_diff = best_score - match['score']
-                            if score_diff>0.02:
+                            if score_diff>0.06:
                                 selection_required = True
                                 break
                             else:
