@@ -3,7 +3,8 @@ import re
 import json
 import numpy as np
 from openai_manager import *
-import torch
+from initial_config import *
+
 class Pinecone_manager:
     def __init__(self, schema_df):
         self.NAMESPACE = []  # Replace with your namespace
@@ -90,6 +91,7 @@ class Pinecone_manager:
         return res
 
     def query_pinecone_and_augment_input(self, user_input, namespace, columns):
+        openai1=Initialize_config.return_key()
         self.augmented_input = user_input
 
         def flatten_dict(d, parent_key=''):
@@ -114,18 +116,16 @@ class Pinecone_manager:
                     continue  # Skip to the next column if no value is found
 
                 # Generate the query embedding for the entity value
-                #query_embedding = self.embedding_model.encode([entity_value])[0]
-                #query_embedding = np.array(query_embedding, dtype=np.float32)
-                inputs = self.tokenizer(entity_value, return_tensors="pt", padding=True, truncation=True)
-                with torch.no_grad():
-                    
-                    outputs = self.embedding_model(**inputs)
-                query_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy().astype(np.float32)
+                response = openai1.embeddings.create(
+                    model="text-embedding-3-large",  # Correct embedding model
+                    input=entity_value  # Input must be a list
+                )
+                embedding = response.data[0].embedding
 
                 try:
                     result = self.pinecone_index.query(
                         namespace=namespace,
-                        vector=query_embedding.tolist(),
+                        vector=embedding,
                         filter={"column_name": {"$eq": column_name}},
                         top_k=3,
                         include_values=True,
@@ -150,7 +150,7 @@ class Pinecone_manager:
                         for match in matches[1:]:
                             print("MAtch score:",match['score'])
                             score_diff = best_score - match['score']
-                            if score_diff>0.02:
+                            if score_diff>0.04:
                                 selection_required = True
                                 break
                             else:
