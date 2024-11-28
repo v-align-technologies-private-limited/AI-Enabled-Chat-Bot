@@ -40,6 +40,8 @@ class Initialize_config:
         self.prompt_template = None
     def __del__(self):
         pass
+    def return_key(self):
+        return Config.OPENAI_API_KEY
     def assign_pinecone_index(self):
         pc = Pinecone(api_key=Config.PINECONE_API_KEY)
         if Config.INDEX_NAME not in pc.list_indexes().names():
