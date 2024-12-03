@@ -49,9 +49,9 @@ class Initialize_config:
         if Config.INDEX_NAME not in pc.list_indexes().names():
             pc.create_index(
                 name=Config.INDEX_NAME,
-                dimension=768,
+                dimension=3072,
                 metric='cosine',
-                spec=ServerlessSpec(cloud='aws', region='us-west-2')
+                spec=ServerlessSpec(cloud='aws', region='us-east-1')
             )
         self.pinecone_index=pc.Index(Config.INDEX_NAME)
     def process_openAI_model(self):

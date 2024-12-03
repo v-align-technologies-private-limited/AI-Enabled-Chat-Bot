@@ -62,12 +62,12 @@ class OpenAI_manager:
            - Identify and extract **text-based features** that match the user input. Focus only on columns with data types like `varchar`, `char`, `text`, or other string-based fields in the schema.
            - **Resolve foreign key references** to their descriptive string values if they are relevant, but **only include the string columns in the output**:
              - For example, if `assigneeid` in the `issues_zoho_projects_` table is a foreign key pointing to a `user_name` field in a related table (e.g., `users_zoho_projects_`), **only include the `user_name` column**, not the integer foreign key `assigneeid`.
-           - **Do not include non-text columns** like integers, even if they are referenced in relationships (e.g., `assigneeid`, `project_id`). Include only relevant text columns that help answer the user’s query.
+           - **Do not include non-text columns** such as integers, timestamps, or IDs, even if they are referenced in relationships (e.g., `ownerid`, `projectid`, `milestoneid`, `createdtime`). Include only relevant text columns that help answer the user’s query.
     
         2. **Expected Output Structure**:
            - The output should be a **JSON object** containing only tables and their corresponding relevant **text-based columns**.
            - If a `user_name` is mentioned in the query, include the `users_zoho_projects_` table with the `user_name` field.
-           - If only an `assigneeid` (foreign key) is mentioned in the query, **exclude** it. If it points to a string column like `user_name` in a related table, **include only the `user_name`** from that table.
+           - If only an `assigneeid` (foreign key) is mentioned in the query, **exclude** it. If it points to a string column like `user_name` in a related table, **include only the `user_name** from that table.
            - If no relevant text-based entities are found in the schema, return an empty JSON object: `{{}}`.
     
         3. **Schema Understanding**:
@@ -86,6 +86,8 @@ class OpenAI_manager:
         6. **Valid and Clean Output**:
            - Ensure that the output is valid JSON and contains only **string columns** with actual values.
            - Avoid placeholders, comments, or any empty fields in the output.
+        
+        7. **Exclude columns or values with data types other than `character varying`, `text`, or `varchar` (e.g., `ownerid`, `projectid`, `milestoneid`, `createdtime`, etc.).**
     
         ### User Query Examples and Expected Output:
         
@@ -102,7 +104,6 @@ class OpenAI_manager:
     
         - **User Input 2**: "What are the projects managed or owned by Dharani?"
         - **Expected Output 2**:
-          
           {{
               "users_zoho_projects_": {{
                   "username": "Dharani"
@@ -117,8 +118,17 @@ class OpenAI_manager:
                   "bugtitle": "XYZ"
               }}
           }}
+        - **User Input 4**: "issues related to project idatalytics?"
+        - **Expected Output 4**:
+          {{
+              "projects_zoho_projects_": {{
+                  "projectname": "idatalytics"
+              }}
+          }}
        
        """
+
+
 
         try:
             # Use the correct OpenAI chat completion method with the refined prompt
@@ -170,6 +180,7 @@ class OpenAI_manager:
             - Prioritize performance by avoiding unnecessary complexity or inefficient constructs, focusing on optimized query design.
             - Handle edge cases where user input may imply similar or interchangeable column names, ensuring the selected columns are contextually appropriate (e.g., using `end_date` instead of `due_date` if the former is present in the schema).
             - **For foreign key relationships, always ensure that the related table’s string column (such as user names, project names, etc.) is also selected when referring to the foreign key.**
+            
         
             Ensure the final SQL query is well-structured, efficient, and accurately reflects the user's request based on the provided input. The response should not include explanations, comments, or any other content beyond the generated SQL query.
         
@@ -213,7 +224,7 @@ class OpenAI_manager:
               {"role": "user", "content": prompt}
           ],
           max_tokens=1000,
-          temperature=0.5
+          temperature=0.7
         )
         
         self.response=response.choices[0].message.content     

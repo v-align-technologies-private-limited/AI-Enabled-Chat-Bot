@@ -13,6 +13,8 @@ class Schema_manager:
         except Exception as e:
             print(f"Error fetching schema with data types: {e}")
             raise
+
+
     def format_schema(self):
         self.schema_str = ""
         grouped = self.schema_df.groupby('table_name')

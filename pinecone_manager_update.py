@@ -15,11 +15,11 @@ class Pinecone_manager:
         self.schema_df = schema_df
         self.extracted_Features = None
         self.cleaned_feature_dict = None
-        self.embedding_model = None
         self.tokenizer= None
         self.pinecone_index = None
         self.selection={}
         self.selection_required=False
+        self.ic=Initialize_config()
 
     def clear_all(self):
         self.NAMESPACE = []  # Replace with your namespace
@@ -68,30 +68,29 @@ class Pinecone_manager:
             self.NAMESPACE.append(key)
             self.columnnames[key] = extracted_dict[key]
     #reframe the input with selected values
-    def call_query_pinecone1(self, user_input, p_i, e_model, data):
-        print(data)
+    def call_query_pinecone1(self, user_input, p_i, data):
+        print("pineconedata", data)
         for x in data.keys():
-            print(x)
-            pattern = re.escape(x)
-            user_input=re.sub(pattern, data[x], user_input, flags=re.IGNORECASE)
+            selected=str(data[x])
+            user_input=user_input.replace(x,selected)
         self.augmented_input=user_input
+        print("augumented_input", self.augmented_input)
         self.selection_required=False
         
     #check if any multiple values for each entity found in vectorDB
-    def call_query_pinecone(self, user_input, p_i, e_model, tokenizer):
+    def call_query_pinecone(self, user_input, p_i):
         self.pinecone_index = p_i
-        self.embedding_model = e_model
-        self.tokenizer=tokenizer
         for key, val in self.cleaned_feature_dict.items():
             columns = list(val.keys())
             if self.augmented_input == '':
                 res = self.query_pinecone_and_augment_input(user_input, key, columns)
             else:
                 res = self.query_pinecone_and_augment_input(self.augmented_input, key, columns)
+        print("augumentedinput",res)
         return res
 
     def query_pinecone_and_augment_input(self, user_input, namespace, columns):
-        openai1=Initialize_config.return_key()
+        openai.api_key=self.ic.return_key()
         self.augmented_input = user_input
 
         def flatten_dict(d, parent_key=''):
@@ -116,7 +115,7 @@ class Pinecone_manager:
                     continue  # Skip to the next column if no value is found
 
                 # Generate the query embedding for the entity value
-                response = openai1.embeddings.create(
+                response = openai.embeddings.create(
                     model="text-embedding-3-large",  # Correct embedding model
                     input=entity_value  # Input must be a list
                 )
@@ -140,7 +139,10 @@ class Pinecone_manager:
 
                         # Check if multiple matches have a significant score difference
                         best_match = matches[0]
-                        
+                        print("match1:",matches[0]['metadata'].get('unique_value', entity_value))
+                        print("match2:",matches[1]['metadata'].get('unique_value', entity_value))
+                        print("match3:",matches[2]['metadata'].get('unique_value', entity_value))
+                        print("Best match:",matches[0]['metadata'].get('unique_value', entity_value))
                         best_score = best_match['score']
                         print("Best Score:",best_score)
                         selection_required = False
@@ -150,13 +152,12 @@ class Pinecone_manager:
                         for match in matches[1:]:
                             print("MAtch score:",match['score'])
                             score_diff = best_score - match['score']
-                            if score_diff>0.04:
+                            if score_diff < 0.07:
                                 selection_required = True
                                 break
                             else:
-                                best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
-                                self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
-
+                                continue
+                                
                         if selection_required:
                             # Record the values for multiple values to select among the matches
                             print(f"Multiple matches found with significant score difference for '{entity_value}'. Please select:")
@@ -164,16 +165,18 @@ class Pinecone_manager:
                                 get_match.append(match['metadata'].get('unique_value', entity_value))
                             self.selection[entity_value]=get_match
                             self.selection_required=True
-                        # Automatically select the best match if no significant score difference
                         else:
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
+                            print('best_match_for_1_entity', best_match_for_1_entity)
                             self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
-                        self.intermediate_input=self.augmented_input
+
+                        
                     else:
                         print(f"No matches found for {entity_value} in Pinecone.")
                 except Exception as e:
                     print(f"Error querying Pinecone: {str(e)}")
         if self.selection_required==True:
+            
             print("Selection dict:",self.selection)
             print("Recent:",self.intermediate_input)
             return {"selection": self.selection}

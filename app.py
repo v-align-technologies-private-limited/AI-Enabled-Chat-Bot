@@ -48,11 +48,11 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                     #checking whether user sent question 
                     if key=="Query":
                         user_input=data
-                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index,p.embedding_model,p.tokenizer)
+                        res=pine_cone.call_query_pinecone(user_input,p.pinecone_index)
                     #if input is user seletions for entity
                     else :
                         print("callpinecone1")
-                        pine_cone.call_query_pinecone1(user_input,p.pinecone_index,p.embedding_model,data)
+                        pine_cone.call_query_pinecone1(user_input,p.pinecone_index,data)
                         res=''
                     if isinstance(res, dict):
                         logs['options']=res
@@ -106,9 +106,12 @@ def process_request():
     determine_querry=Determine_querry_type(schema_manager.schema_df)
     try:
         data = request.json
+        print('data', data)
         key=next(iter(data.keys()))
+        print('key',key)
         data=data[key]
-        print(data)
+        # print('data', data)
+        # print(data)
         if key=='Query':
             user_input=data
             print(3)
