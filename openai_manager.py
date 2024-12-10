@@ -39,118 +39,122 @@ class OpenAI_manager:
         except Exception as e:
             return f"Error generating response from OpenAI: {str(e)}"  
         
-    def extract_features_with_openai(self,user_input, processed_schema_df):
+    # Function to extract features with OpenAI based on user input and schema
+    def extract_features_with_openai(user_input, processed_schema_df):
         schema_json = processed_schema_df.to_json(orient='records')
-
-        # Define aggregation keywords
-        aggregation_keywords = ["count", "sum", "average", "min", "max"]
-
-        # Check if the user input contains aggregation keywords
-        contains_aggregation = any(keyword in user_input.lower() for keyword in aggregation_keywords)
-
-        # Refined prompt to ensure OpenAI extracts only relevant string entities
+    
+        # Define dynamic extraction keywords for aggregation and entity-specific queries
+        dynamic_keywords = {
+            "aggregation": ["highest", "most", "maximum", "max", "largest", "lowest", "least", "minimum", "min", "count", "sum", "average"],
+            "entity_specific": ["who", "where", "which", "what", "how many", "how much"]
+        }
+    
+        # Prompt preparation: Guide OpenAI to understand schema and extract relevant features
         prompt = f"""
         ### Database Schema Overview
         The following schema provides the columns and tables available in the database. Use this schema to interpret user input accurately:
         {schema_json}
-        
+    
         ### User Query
         The user has input: "{user_input}"
-        
-        ### Objectives
-        1. **Extract Relevant Features**:
-           - Identify and extract **text-based features** that match the user input. Focus only on columns with data types like `varchar`, `char`, `text`, or other string-based fields in the schema.
-           - **Resolve foreign key references** to their descriptive string values if they are relevant, but **only include the string columns in the output**:
-             - For example, if `assigneeid` in the `issues_zoho_projects_` table is a foreign key pointing to a `user_name` field in a related table (e.g., `users_zoho_projects_`), **only include the `user_name` column**, not the integer foreign key `assigneeid`.
-           - **Do not include non-text columns** such as integers, timestamps, or IDs, even if they are referenced in relationships (e.g., `ownerid`, `projectid`, `milestoneid`, `createdtime`). Include only relevant text columns that help answer the user’s query.
     
-        2. **Expected Output Structure**:
-           - The output should be a **JSON object** containing only tables and their corresponding relevant **text-based columns**.
-           - If a `user_name` is mentioned in the query, include the `users_zoho_projects_` table with the `user_name` field.
-           - If only an `assigneeid` (foreign key) is mentioned in the query, **exclude** it. If it points to a string column like `user_name` in a related table, **include only the `user_name** from that table.
-           - If no relevant text-based entities are found in the schema, return an empty JSON object: `{{}}`.
+        ### Instructions
+        1. **Understand User Intent**:
+           - Carefully read the user query both left-to-right and right-to-left to identify potential entities, relationships, and operations.
+           - Use a "chain of thoughts" approach to break down the query into parts and analyze the intent for each segment.
+           - Identify if the query indicates aggregation (e.g., maximum, minimum, count) or specific entities (e.g., user names, project names, milestone names, status etc.).
+           - Ensure that synonyms and closely related terms are mapped accurately to schema components.
     
-        3. **Schema Understanding**:
-           - **Understand the relationships** between tables and resolve foreign key relationships accurately. However, only include text-based columns from the schema.
-           - **Prioritize text-based fields** that provide meaningful data related to the user’s query.
-           - Exclude any integer fields like foreign keys from the output unless they point to a descriptive string column in a related table.
+        2. **Extract Relevant Entities**:
+           - Match user input to text-based columns in the schema (e.g., `varchar`, `char`, `text`).
+           - Handle partial matches, synonyms, and spelling variations by considering contextual clues from the schema.
+           - Resolve foreign keys to their corresponding descriptive columns (e.g., `assigneeid` -> `username`,`projectid` -> `projectname`,`milestoneid` -> `milestonename`).
     
-        4. **Foreign Key Handling**:
-           - If a foreign key column exists (like `assigneeid` or `project_id`) but points to a non-string field (such as an integer), **do not include the foreign key column**.
-           - If the foreign key points to a string column (like `user_name`), **only include the string column** from the related table (e.g., `users_zoho_projects_` for `user_name`).
+        3. **Classify Query Type**:
+           - Determine if the query is:
+             a. An **aggregation query**, requiring calculations like maximum, minimum, or count.
+             b. An **entity-specific query**, focusing on particular items or details.
+           - Provide reasoning for the classification in the output.
     
-        5. **Contextual Clarity**:
-           - Ensure that the chosen table and column names are directly relevant to the user's query.
-           - When in doubt, prioritize including **string-based columns** that clarify and directly match the user’s query context.
+        4. **Expected Output Format**:
+           - A JSON object containing:
+             a. `query_type`: Either "aggregation" or "entity_extraction".
+             b. `intent_analysis`: A breakdown of user intent and reasoning.
+             c. `extracted_entities`: Relevant tables, columns, and matched values from the schema.
     
-        6. **Valid and Clean Output**:
-           - Ensure that the output is valid JSON and contains only **string columns** with actual values.
-           - Avoid placeholders, comments, or any empty fields in the output.
-        
-        7. **Exclude columns or values with data types other than `character varying`, `text`, or `varchar` (e.g., `ownerid`, `projectid`, `milestoneid`, `createdtime`, etc.).**
+        5. **Handle Foreign Keys Dynamically**:
+           - If a foreign key column exists (e.g., `assigneeid`,`projectid`,`milestoneid`) but points to a non-text field, exclude it.
+           - If the foreign key references a string-based column (e.g., `username`,`projectname`,`milestonename`), include only the string-based column from the related table.
     
-        ### User Query Examples and Expected Output:
-        
-        - **User Input 1**: "What is the status of project Voice enabled which is assigned to Basavaraj?"
-        - **Expected Output 1**:
-          {{
-              "projects": {{
-                  "project_name": "Voice enabled"
-              }},
-              "users_zoho_projects_": {{
-                  "username": "Basavaraj"
-              }}
-          }}
+        ### Example Outputs
+        For the query "Who logged the highest hours last month?":
+        {{
+            "query_type": "aggregation",
+            "intent_analysis": "The query asks for the user who logged the most hours, requiring aggregation on the hours column.",
+            "extracted_entities": {{
+                "users_zoho_projects_": {{
+                    "username": "resolved dynamically"
+                }}
+            }}
+        }}
     
-        - **User Input 2**: "What are the projects managed or owned by Dharani?"
-        - **Expected Output 2**:
-          {{
-              "users_zoho_projects_": {{
-                  "username": "Dharani"
-              }}
-          }}
-          
+        For the query "How many hours did Rishi log last month?":
+        {{
+            "query_type": "entity_extraction",
+            "intent_analysis": "The query asks for specific details about a user (Rishi) and the hours logged.",
+            "extracted_entities": {{
+                "users_zoho_projects_": {{
+                    "username": "Rishi"
+                }}
+            }}
+        }}
     
-        - **User Input 3**: "Who is the assignee of issue XYZ?"
-        - **Expected Output 3**:
-          {{
-              "issues_zoho_projects_": {{
-                  "bugtitle": "XYZ"
-              }}
-          }}
-        - **User Input 4**: "issues related to project idatalytics?"
-        - **Expected Output 4**:
-          {{
-              "projects_zoho_projects_": {{
-                  "projectname": "idatalytics"
-              }}
-          }}
-       
-       """
-
-
-
+        For the query "What is the status of project Voice enabled which is assigned to Basavaraj?":
+        {{
+            "query_type": "entity_extraction",
+            "intent_analysis": "The query asks for the status of a project assigned to a specific user.",
+            "extracted_entities": {{
+                "projects_zoho_projects_": {{
+                    "projectname": "Voice enabled",
+                    "status": "resolved dynamically"
+                }},
+                "users_zoho_projects_": {{
+                    "username": "Basavaraj"
+                }}
+            }}
+        }}
+    
+        ### User Query Analysis and Output
+        """
         try:
-            # Use the correct OpenAI chat completion method with the refined prompt
+            # Use OpenAI to analyze the query dynamically
             response = openai.chat.completions.create(
                 model="gpt-4o-mini-2024-07-18",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant specializing in extracting entities that map user input to the relevant tables and columns in the database."}, 
+                    {"role": "system", "content": "You are an expert assistant skilled in understanding and extracting entities from user queries based on a database schema."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=7000,
                 temperature=0.2
             )
+    
+            # Extract the response content
+            response_content = response.choices[0].message.content.strip()
+            print("response_content:", response_content)
+    
+            # Parse the JSON response
+            extracted_features = json.loads(response_content)
+            print("extracted_features:", extracted_features)
             
-            # Extract the response text
-            extracted_features = response.choices[0].message.content.strip()
-
-            # Remove any markdown formatting, if present
-            extracted_features = extracted_features.replace('```json', '').replace('```', '').strip()
             return extracted_features
+    
         except openai.OpenAIError as e:
-            print(f"Error with OpenAI: {e}")
+            print(f"Error with OpenAI API: {e}")
             raise
+        except json.JSONDecodeError as e:
+            print(f"Error parsing OpenAI response: {e}")
+            raise
+
     
     def generate_sql_query(self,processed_schema_str, aug_input):
         prompt = f"""
