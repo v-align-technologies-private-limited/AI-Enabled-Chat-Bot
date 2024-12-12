@@ -31,6 +31,8 @@ class Pinecone_manager:
         self.intermediate_input=''
         self.selection={}
         self.selection_required=False
+        self.query_type = None
+        self.intent_analysis = None
 
     def process_user_input(self, user_input):
         print(101)
@@ -98,7 +100,10 @@ class Pinecone_manager:
     #check if any multiple values for each entity found in vectorDB
     def call_query_pinecone(self, user_input, p_i):
         self.pinecone_index = p_i
+        print("hiiiiiiiiii")
+        print(type(self.cleaned_feature_dict))
         for key, val in self.cleaned_feature_dict.items():
+            print("helllooo")
             columns = list(val.keys())
             if self.augmented_input == '':
                 res = self.query_pinecone_and_augment_input(user_input, key, columns)
@@ -110,6 +115,7 @@ class Pinecone_manager:
     def query_pinecone_and_augment_input(self, user_input, namespace, columns):
         openai.api_key=self.ic.return_key()
         self.augmented_input = user_input
+        print("querry pinecone")
 
         def flatten_dict(d, parent_key=''):
             items = []
@@ -182,25 +188,28 @@ class Pinecone_manager:
                         if selection_required:
                             # Record the values for multiple values to select among the matches
                             print(f"Multiple matches found with significant score difference for '{entity_value}'. Please select:")
+                            print("Select one of fallowing")
                             for i, match in enumerate(matches):
-                                get_match.append(match['metadata'].get('unique_value', entity_value))
-                            self.selection[entity_value]=get_match
-                            self.selection_required=True
+                                print(match['metadata'].get('unique_value', entity_value))
+                            sel=int(input("Choose 1,2 or 3:"))
+                            best_match_for_1_entity = matches[sel]['metadata'].get('unique_value', entity_value)
+                            print(best_match_for_1_entity)
+                            print('best_match_for_1_entity', best_match_for_1_entity)
+                            self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
+                            self.intent_analysis = self.intent_analysis.replace(entity_value, best_match_for_1_entity)
+                            #self.selection_required=True
                         else:
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
                             print('best_match_for_1_entity', best_match_for_1_entity)
                             self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
+                            self.intent_analysis = self.intent_analysis.replace(entity_value, best_match_for_1_entity)
 
                         
                     else:
                         print(f"No matches found for {entity_value} in Pinecone.")
                 except Exception as e:
                     print(f"Error querying Pinecone: {str(e)}")
-        if self.selection_required==True:
-            
-            print("Selection dict:",self.selection)
-            print("Recent:",self.intermediate_input)
-            return {"selection": self.selection}
-        else:
-            return self.augmented_input
+        print("aug input:",self.augmented_input)
+        print("intent:",self.intent_analysis)
+        return self.augmented_input
 
