@@ -182,7 +182,7 @@ class OpenAI_manager:
             raise
 
     
-    def generate_sql_query(self,processed_schema_str, intent_analysis='',augmented_input='',extracted_entities=''):
+    def generate_sql_query(self,processed_schema_str, intent_analysis='',augmented_input=''):
         prompt = f"""
     You are a PostgreSQL expert. Given an input question, create a syntactically correct PostgreSQL query and return ONLY the generated query. Use the following guidelines for SQL generation:
     ### Database Schema Overview
