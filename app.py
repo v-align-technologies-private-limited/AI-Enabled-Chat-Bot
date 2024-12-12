@@ -58,7 +58,7 @@ def main(db_name='',schema='',data='',determine_querry='',key=''):
                         logs['options']=res
                         print("Res:",res)
                         return res
-                    openai_manager.generate_sql_queryschema_manager.schema_str,pine_cone.intent_analysis,pine_cone.augmented_input,pine_cone.extracted_Features)
+                    openai_manager.generate_sql_query(schema_manager.schema_str,pine_cone.intent_analysis,pine_cone.augmented_input)
                     logs['aug_ip']=pine_cone.augmented_input
                     DB.execute_sql_query(openai_manager.sql_query)
                     logs['sql']=openai_manager.sql_query
