@@ -203,5 +203,7 @@ class Pinecone_manager:
             print("Recent:",self.intermediate_input)
             return {"selection": self.selection}
         else:
+            print("aug input:",self.augmented_input)
+            print("intent:",self.intent_analysis)
             return self.augmented_input
 
