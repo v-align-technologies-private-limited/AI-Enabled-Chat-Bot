@@ -92,6 +92,7 @@ class Pinecone_manager:
             selected=str(data[x])
             user_input=user_input.replace(x,selected)
         self.augmented_input=user_input
+        print("User Intent Analysis", self.intent_analysis)
         print("augumented_input", self.augmented_input)
         self.selection_required=False
         
