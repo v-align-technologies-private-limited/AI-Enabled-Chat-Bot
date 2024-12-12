@@ -222,11 +222,11 @@ class OpenAI_manager:
     - Handle edge cases where user input may imply similar or interchangeable column names, ensuring the selected columns are contextually appropriate (e.g., using `end_date` instead of `due_date` if the former is present in the schema).
     - **For foreign key relationships, always ensure that the related table’s string column (such as user names, project names, etc.) is also selected when referring to the foreign key.**
     - The input may contain explicit instructions involving negation, such as "not completed," "not escalated," or "not blocked." In these cases:
-    - **Use `!=` operator** when the negation applies to a specific value (e.g., `status != 'completed'`).
+    - **Always Use `NOT ILIKE` operator** when the negation applies to a specific value (e.g., `status NOT ILIKE '%completed%'`).
     - If the negation implies a flexible match (e.g., "not completed tasks"), use `NOT ILIKE` or `ILIKE` with `%` appropriately (e.g., `status NOT ILIKE '%completed%'`).
     - For negation, avoid assuming literal phrases like "not completed" exist in the database unless explicitly stated. Instead:
-    - Translate phrases like "not completed" into conditions that exclude specific statuses (`!=` or `NOT ILIKE`).
-    - For all queries, validate column names and status values against the schema to ensure the query is contextually accurate.Ensure the final SQL query uses appropriate operators (`!=`, `NOT ILIKE`, etc.) for conditions involving negation.
+    - Translate phrases like "not completed" into conditions that exclude specific statuses (`NOT ILIKE`).
+    - For all queries, validate column names and status values against the schema to ensure the query is contextually accurate.Ensure the final SQL query uses appropriate operators ( `NOT ILIKE`, etc.) for conditions involving negation.
     - Maintain precision in matching status descriptions, using `ILIKE` for case-insensitive comparisons and `%` for partial matches where necessary.
     - Generate SQL queries that reflect accurate intent by interpreting user input holistically, including implied conditions, such as negation or inclusion.
 
