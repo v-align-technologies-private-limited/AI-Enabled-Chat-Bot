@@ -91,6 +91,7 @@ class Pinecone_manager:
         for x in data.keys():
             selected=str(data[x])
             user_input=user_input.replace(x,selected)
+            self.intent_analysis = self.intent_analysis.replace(x, selected)
         self.augmented_input=user_input
         print("User Intent Analysis", self.intent_analysis)
         print("augumented_input", self.augmented_input)
@@ -191,6 +192,7 @@ class Pinecone_manager:
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
                             print('best_match_for_1_entity', best_match_for_1_entity)
                             self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
+                            self.intent_analysis = self.intent_analysis.replace(entity_value, best_match_for_1_entity)
 
                         
                     else:
