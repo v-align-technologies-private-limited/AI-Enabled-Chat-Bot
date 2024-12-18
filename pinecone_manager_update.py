@@ -114,6 +114,7 @@ class Pinecone_manager:
     def query_pinecone_and_augment_input(self, user_input, namespace, columns):
         openai.api_key=self.ic.return_key()
         self.augmented_input = user_input
+      
 
         def flatten_dict(d, parent_key=''):
             items = []
@@ -126,6 +127,7 @@ class Pinecone_manager:
             return dict(items)
 
         flat_entities = flatten_dict(self.cleaned_feature_dict)
+        pinecone_metadata_list = []
         for column_name in columns:
             
             if column_name not in self.searched_cols:
@@ -191,9 +193,10 @@ class Pinecone_manager:
                             self.selection[entity_value]=get_match
                             self.selection_required=True
                         else:
+                            
                             # Extract the best match for the entity
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
-                            pinecone_match_for_entities = matches[0]['metadata']
+                            pinecone_metadata_list.extend([match['metadata'] for match in matches])
                             
                             # Append metadata for all matches into the list
                             for match in matches:
