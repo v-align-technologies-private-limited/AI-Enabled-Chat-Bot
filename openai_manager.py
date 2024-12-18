@@ -200,10 +200,10 @@ class OpenAI_manager:
 
     ### Instructions
     - Prioritize **Pinecone matches (`{pinecone_metadata_list}`)** as the most reliable source for column values when generating SQL queries, as these are guaranteed to be correct values from the database.
-    - Use `{aug_input}` and `{intent_analysis}` primarily to confirm context, but always cross-check column values against `{pinecone_metadata_list}` before constructing the query.
-    - If `{aug_input}` and `{intent_analysis}` lack specific details (such as `status` or `username`), use `{pinecone_metadata_list}` as the fallback to ensure accurate column values from the database schema.
-    - For example, if the `status` value is not present in `{aug_input}` or `{intent_analysis}`, use the `{pinecone_metadata_list}` value to resolve it, ensuring the correct status (like `Done` or `Completed`) is used.
-    - If the `username` or other entity values are explicitly available in both `{aug_input}` and `{intent_analysis}`, ignore `{pinecone_metadata_list}` for those entities.
+    - Use `{augmented_input}` and `{intent_analysis}` primarily to confirm context, but always cross-check column values against `{pinecone_metadata_list}` before constructing the query.
+    - If `{augmented_input}` and `{intent_analysis}` lack specific details (such as `status` or `username`), use `{pinecone_metadata_list}` as the fallback to ensure accurate column values from the database schema.
+    - For example, if the `status` value is not present in `{augmented_input}` or `{intent_analysis}`, use the `{pinecone_metadata_list}` value to resolve it, ensuring the correct status (like `Done` or `Completed`) is used.
+    - If the `username` or other entity values are explicitly available in both `{augmented_input}` and `{intent_analysis}`, ignore `{pinecone_metadata_list}` for those entities.
     - Validate and replace user-provided terms with the **closest matching valid database values** based on `{pinecone_metadata_list}`.
     - The input may contain partial or similar names for entities, such as project names, user names, or status descriptions. Handle these using `ILIKE` operators with `%` on both sides of the string to allow flexible matching and accurate querying.
     - **Do not use column names directly from user input** without validation. Cross-check user terms against the provided database schema and select the most relevant and existing columns.
@@ -268,9 +268,9 @@ class OpenAI_manager:
             raise
 
             
-    def generate_response(self,aug_input,results):
+    def generate_response(self,augmented_input,results):
         # Prepare the prompt for GPT-4 to generate the natural language response
-        prompt = f"User query: \"{aug_input}\"\nSQL result: {results}\nGenerate a natural language response from the result:"
+        prompt = f"User query: \"{augmented_input}\"\nSQL result: {results}\nGenerate a natural language response from the result:"
         
         # Call the OpenAI Chat API
         response = openai.chat.completions.create(
