@@ -196,15 +196,15 @@ class OpenAI_manager:
     {intent_analysis}
 
     ### Extracted Entities from user Pinecone Vector DB
-    {pineconematches}
+    {pinecone_metadata_list}
 
     ### Instructions
-    - Prioritize **Pinecone matches (`{pineconematches}`)** as the most reliable source for column values when generating SQL queries, as these are guaranteed to be correct values from the database.
-    - Use `{aug_input}` and `{intent_analysis}` primarily to confirm context, but always cross-check column values against `{pineconematches}` before constructing the query.
-    - If `{aug_input}` and `{intent_analysis}` lack specific details (such as `status` or `username`), use `{pineconematches}` as the fallback to ensure accurate column values from the database schema.
-    - For example, if the `status` value is not present in `{aug_input}` or `{intent_analysis}`, use the `{pineconematches}` value to resolve it, ensuring the correct status (like `Done` or `Completed`) is used.
-    - If the `username` or other entity values are explicitly available in both `{aug_input}` and `{intent_analysis}`, ignore `{pineconematches}` for those entities.
-    - Validate and replace user-provided terms with the **closest matching valid database values** based on `{pineconematches}`.
+    - Prioritize **Pinecone matches (`{pinecone_metadata_list}`)** as the most reliable source for column values when generating SQL queries, as these are guaranteed to be correct values from the database.
+    - Use `{aug_input}` and `{intent_analysis}` primarily to confirm context, but always cross-check column values against `{pinecone_metadata_list}` before constructing the query.
+    - If `{aug_input}` and `{intent_analysis}` lack specific details (such as `status` or `username`), use `{pinecone_metadata_list}` as the fallback to ensure accurate column values from the database schema.
+    - For example, if the `status` value is not present in `{aug_input}` or `{intent_analysis}`, use the `{pinecone_metadata_list}` value to resolve it, ensuring the correct status (like `Done` or `Completed`) is used.
+    - If the `username` or other entity values are explicitly available in both `{aug_input}` and `{intent_analysis}`, ignore `{pinecone_metadata_list}` for those entities.
+    - Validate and replace user-provided terms with the **closest matching valid database values** based on `{pinecone_metadata_list}`.
     - The input may contain partial or similar names for entities, such as project names, user names, or status descriptions. Handle these using `ILIKE` operators with `%` on both sides of the string to allow flexible matching and accurate querying.
     - **Do not use column names directly from user input** without validation. Cross-check user terms against the provided database schema and select the most relevant and existing columns.
     - If the user input mentions a column that doesn't exist (e.g., `due_date`), **substitute it with a semantically similar, valid column** from the schema (e.g., use `end_date` if `due_date` is requested but not found).
