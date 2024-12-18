@@ -197,7 +197,7 @@ class Pinecone_manager:
                             
                             # Append metadata for all matches into the list
                             for match in matches:
-                                pinecone_metadata_list.append(match['metadata'])
+                                self.pinecone_metadata_list.append(match['metadata'])
                         
                             # Log the best match and append the metadata
                             print('best_match_for_1_entity', best_match_for_1_entity)
