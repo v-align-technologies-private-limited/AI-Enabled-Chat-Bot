@@ -189,10 +189,28 @@ class Pinecone_manager:
                             self.selection[entity_value]=get_match
                             self.selection_required=True
                         else:
+                            # Initialize a list to collect metadata for matches
+                            pinecone_metadata_list = []
+                        
+                            # Extract the best match for the entity
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
+                            pinecone_match_for_entities = matches[0]['metadata']
+                            
+                            # Append metadata for all matches into the list
+                            for match in matches:
+                                pinecone_metadata_list.append(match['metadata'])
+                        
+                            # Log the best match and append the metadata
                             print('best_match_for_1_entity', best_match_for_1_entity)
+                            print('Pinecone Metadata List:', pinecone_metadata_list)
+                            
+                            # Replace the entity value with the best match in augmented input and intent analysis
                             self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
                             self.intent_analysis = self.intent_analysis.replace(entity_value, best_match_for_1_entity)
+                        
+                            # Store metadata list for further use if needed
+                            self.pinecone_metadata_list = pinecone_metadata_list
+
 
                         
                     else:
