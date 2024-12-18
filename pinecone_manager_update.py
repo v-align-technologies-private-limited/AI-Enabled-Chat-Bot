@@ -11,6 +11,7 @@ class Pinecone_manager:
         self.columnnames = {}
         self.searched_cols = []
         self.augmented_input = ''
+        self.pinecone_metadata_list = []
         self.intermediate_input=''
         self.schema_df = schema_df
         self.extracted_Features = None
@@ -27,6 +28,7 @@ class Pinecone_manager:
         self.NAMESPACE = []  # Replace with your namespace
         self.columnnames = {}
         self.searched_cols = []
+        self.pinecone_metadata_list = []
         self.augmented_input = ''
         self.intermediate_input=''
         self.selection={}
@@ -189,9 +191,6 @@ class Pinecone_manager:
                             self.selection[entity_value]=get_match
                             self.selection_required=True
                         else:
-                            # Initialize a list to collect metadata for matches
-                            pinecone_metadata_list = []
-                        
                             # Extract the best match for the entity
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
                             pinecone_match_for_entities = matches[0]['metadata']
