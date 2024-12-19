@@ -172,6 +172,11 @@ class Pinecone_manager:
                         print("Best match:",matches[0]['metadata'].get('unique_value', entity_value))
                         best_score = best_match['score']
                         print("Best Score:",best_score)
+                        pinecone_metadata_list.extend([match['metadata'] for match in matches])   
+                        # Append metadata for all matches into the list
+                        for match in matches:
+                            self.pinecone_metadata_list.append(match['metadata'])
+                        print('Pinecone Metadata List:', pinecone_metadata_list)
                         selection_required = False
                         selected_match = best_match['metadata'].get('unique_value', entity_value)
 
@@ -196,15 +201,15 @@ class Pinecone_manager:
                             
                             # Extract the best match for the entity
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
-                            pinecone_metadata_list.extend([match['metadata'] for match in matches])
+                            # pinecone_metadata_list.extend([match['metadata'] for match in matches])
                             
-                            # Append metadata for all matches into the list
-                            for match in matches:
-                                self.pinecone_metadata_list.append(match['metadata'])
+                            # # Append metadata for all matches into the list
+                            # for match in matches:
+                            #     self.pinecone_metadata_list.append(match['metadata'])
                         
                             # Log the best match and append the metadata
                             print('best_match_for_1_entity', best_match_for_1_entity)
-                            print('Pinecone Metadata List:', pinecone_metadata_list)
+                           
                             
                             # Replace the entity value with the best match in augmented input and intent analysis
                             self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
