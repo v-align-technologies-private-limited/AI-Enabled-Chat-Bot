@@ -160,11 +160,8 @@ class Pinecone_manager:
 
                     matches = result.get('matches', [])
                     if matches:
-                    # Append metadata for all matches to the list
-                    pinecone_metadata_list.extend([match['metadata'] for match in matches])
-                    else:
-                        print(f"No matches found for {entity_value} in Pinecone.")
-                    if matches:
+                        # Append metadata for all matches to the list
+                        pinecone_metadata_list.extend([match['metadata'] for match in matches])
                         get_match=[]
                         # Sort matches by score in descending order
                         matches.sort(key=lambda x: x['score'], reverse=True)
