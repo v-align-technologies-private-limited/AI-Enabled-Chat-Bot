@@ -243,6 +243,7 @@ class OpenAI_manager:
 
         try:
             # Call OpenAI to generate the SQL query
+            print("prompt", prompt)
             response = openai.chat.completions.create(
                 model="gpt-4o-mini-2024-07-18",
                 messages=[
