@@ -160,6 +160,11 @@ class Pinecone_manager:
 
                     matches = result.get('matches', [])
                     if matches:
+                    # Append metadata for all matches to the list
+                    pinecone_metadata_list.extend([match['metadata'] for match in matches])
+                    else:
+                        print(f"No matches found for {entity_value} in Pinecone.")
+                    if matches:
                         get_match=[]
                         # Sort matches by score in descending order
                         matches.sort(key=lambda x: x['score'], reverse=True)
@@ -172,11 +177,6 @@ class Pinecone_manager:
                         print("Best match:",matches[0]['metadata'].get('unique_value', entity_value))
                         best_score = best_match['score']
                         print("Best Score:",best_score)
-                        pinecone_metadata_list.extend([match['metadata'] for match in matches])   
-                        # Append metadata for all matches into the list
-                        for match in matches:
-                            self.pinecone_metadata_list.append(match['metadata'])
-                        print('Pinecone Metadata List:', pinecone_metadata_list)
                         selection_required = False
                         selected_match = best_match['metadata'].get('unique_value', entity_value)
 
@@ -198,32 +198,16 @@ class Pinecone_manager:
                             self.selection[entity_value]=get_match
                             self.selection_required=True
                         else:
-                            
-                            # Extract the best match for the entity
                             best_match_for_1_entity = matches[0]['metadata'].get('unique_value', entity_value)
-                            # pinecone_metadata_list.extend([match['metadata'] for match in matches])
-                            
-                            # # Append metadata for all matches into the list
-                            # for match in matches:
-                            #     self.pinecone_metadata_list.append(match['metadata'])
-                        
-                            # Log the best match and append the metadata
                             print('best_match_for_1_entity', best_match_for_1_entity)
-                           
-                            
-                            # Replace the entity value with the best match in augmented input and intent analysis
                             self.augmented_input = self.augmented_input.replace(entity_value, best_match_for_1_entity)
-                            self.intent_analysis = self.intent_analysis.replace(entity_value, best_match_for_1_entity)
-                        
-                            # Store metadata list for further use if needed
-                            self.pinecone_metadata_list = pinecone_metadata_list
-
-
-                        
+                            self.intent_analysis = self.intent_analysis.replace(entity_value, best_match_for_1_entity)   
                     else:
                         print(f"No matches found for {entity_value} in Pinecone.")
                 except Exception as e:
                     print(f"Error querying Pinecone: {str(e)}")
+        self.pinecone_metadata_list.extend(pinecone_metadata_list)
+        print('Pinecone Metadata List (All Columns and Namespaces):', self.pinecone_metadata_list)
         if self.selection_required==True:
             
             print("Selection dict:",self.selection)
