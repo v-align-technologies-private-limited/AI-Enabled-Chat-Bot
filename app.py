@@ -138,4 +138,4 @@ def assign_db():
 if __name__ == "__main__":
     from waitress import serve
     warnings.filterwarnings("ignore")
-    app.run(host="0.0.0.0",debug=True,port=5001,threaded=True)
+    serve(app, host="0.0.0.0", debug=True, port=5001, threaded=True)
