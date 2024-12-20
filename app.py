@@ -138,4 +138,8 @@ def assign_db():
 if __name__ == "__main__":
     from waitress import serve
     warnings.filterwarnings("ignore")
-    serve(app, host="0.0.0.0", debug=True, port=5001, threaded=True)
+    try:
+        serve(app, host="0.0.0.0", debug=True, port=5001, threaded=True)
+    except Exception as e:
+        print(f"Error starting server: {e}")
+
