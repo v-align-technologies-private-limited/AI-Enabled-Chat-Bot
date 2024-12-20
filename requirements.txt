@@ -44,3 +44,5 @@ spacy
 langchain-openai
 sentence-transformers
 psycopg2
+waitress
+gunicorn
